@@ -1,0 +1,74 @@
+@page
+@model FixHub.Web.Pages.Jobs.MyModel
+@{
+    ViewData["Title"] = "Mis trabajos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Mis trabajos</h2>
+    <a asp-page="/Jobs/Create" class="btn btn-primary">+ Publicar trabajo</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+@if (Model.Jobs is not null && Model.Jobs.Items.Count > 0)
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Título</th>
+                    <th>Categoría</th>
+                    <th>Estado</th>
+                    <th>Presupuesto</th>
+                    <th>Fecha</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var job in Model.Jobs.Items)
+                {
+                    <tr>
+                        <td>@job.Title</td>
+                        <td><span class="badge bg-light text-dark">@job.CategoryName</span></td>
+                        <td>
+                            <span class="badge @FixHub.Web.Pages.Jobs.MyModel.StatusBadge(job.Status)">@FixHub.Web.Pages.Jobs.MyModel.StatusLabel(job.Status)</span>
+                        </td>
+                        <td class="text-success small">
+                            @(job.BudgetMin.HasValue ? $"${job.BudgetMin:N0}–${job.BudgetMax:N0}" : "—")
+                        </td>
+                        <td class="text-muted small">@job.CreatedAt.ToString("dd/MM/yy")</td>
+                        <td>
+                            <a asp-page="/Jobs/Detail" asp-route-id="@job.Id"
+                               class="btn btn-sm btn-outline-primary">Ver</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Jobs.TotalPages > 1)
+    {
+        <nav>
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= Model.Jobs.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Jobs.Page ? "active" : "")">
+                        <a class="page-link" asp-page="/Jobs/My" asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="alert alert-light text-center py-5">
+        <p class="text-muted mb-0">Aún no has publicado ningún trabajo.</p>
+        <a asp-page="/Jobs/Create" class="btn btn-primary mt-3">Publicar primer trabajo</a>
+    </div>
+}

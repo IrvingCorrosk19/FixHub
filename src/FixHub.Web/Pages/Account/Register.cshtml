@@ -1,0 +1,59 @@
+@page
+@model FixHub.Web.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Crear cuenta";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Crear cuenta</h4>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="alert alert-danger">@Model.ErrorMessage</div>
+                }
+
+                <form method="post">
+                    <div class="mb-3">
+                        <label asp-for="Input.FullName" class="form-label">Nombre completo</label>
+                        <input asp-for="Input.FullName" class="form-control" placeholder="Juan Pérez" />
+                        <span asp-validation-for="Input.FullName" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.Email" class="form-label">Correo electrónico</label>
+                        <input asp-for="Input.Email" class="form-control" type="email" placeholder="tu@email.com" />
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.Phone" class="form-label">Teléfono <span class="text-muted">(opcional)</span></label>
+                        <input asp-for="Input.Phone" class="form-control" placeholder="+507-6000-0000" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.Password" class="form-label">Contraseña</label>
+                        <input asp-for="Input.Password" class="form-control" type="password" />
+                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+                        <div class="form-text">Mínimo 8 caracteres, una mayúscula y un número.</div>
+                    </div>
+                    <div class="mb-4">
+                        <label asp-for="Input.Role" class="form-label">Tipo de cuenta</label>
+                        <select asp-for="Input.Role" class="form-select">
+                            <option value="1">Cliente — Publicar trabajos</option>
+                            <option value="2">Técnico — Ofrecer servicios</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Crear cuenta</button>
+                </form>
+            </div>
+            <div class="card-footer text-center text-muted small">
+                ¿Ya tienes cuenta? <a asp-page="/Account/Login">Inicia sesión</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

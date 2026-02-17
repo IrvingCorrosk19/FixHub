@@ -1,0 +1,43 @@
+# Build
+bin/
+obj/
+out/
+[Dd]ebug/
+[Rr]elease/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# User secrets (no subir claves)
+appsettings.*.local.json
+secrets.json
+
+# NuGet
+*.nupkg
+.nuget/packages/
+project.lock.json
+project.fragment.lock.json
+
+# Tests
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# IDE / tools
+.claude/
+
+# Misc
+*.log
+*.vspscc
+*.vssscc
+.DS_Store
+Thumbs.db
+
+# Docker (opcional, descomenta si no quieres subir)
+# docker-compose.override.yml

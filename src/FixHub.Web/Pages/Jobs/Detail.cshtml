@@ -1,0 +1,146 @@
+@page "{id:guid}"
+@model FixHub.Web.Pages.Jobs.DetailModel
+@{
+    ViewData["Title"] = Model.Job?.Title ?? "Detalle del trabajo";
+}
+
+@if (Model.Job is null)
+{
+    <div class="alert alert-danger">Trabajo no encontrado.</div>
+}
+else
+{
+    var job = Model.Job;
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h3 class="mb-0">@job.Title</h3>
+                        <span class="badge fs-6 @FixHub.Web.Pages.Jobs.DetailModel.StatusBadge(job.Status)">@job.Status</span>
+                    </div>
+                    <p class="text-muted small">
+                        <strong>Categoría:</strong> @job.CategoryName &nbsp;|&nbsp;
+                        <strong>Publicado por:</strong> @job.CustomerName &nbsp;|&nbsp;
+                        @job.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    </p>
+                    <hr />
+                    <p>@job.Description</p>
+                    <p><strong>Dirección:</strong> @job.AddressText</p>
+                    @if (job.BudgetMin.HasValue || job.BudgetMax.HasValue)
+                    {
+                        <p>
+                            <strong>Presupuesto:</strong>
+                            $@(job.BudgetMin?.ToString("N2") ?? "?") — $@(job.BudgetMax?.ToString("N2") ?? "?")
+                        </p>
+                    }
+                </div>
+                <div class="card-footer d-flex gap-2 flex-wrap">
+                    @if (Model.IsCustomer && Model.IsOwner && (job.Status == "Assigned" || job.Status == "InProgress"))
+                    {
+                        <form method="post" asp-page-handler="Complete">
+                            <button type="submit" class="btn btn-success"
+                                    onclick="return confirm('¿Marcar este trabajo como completado?')">
+                                Marcar como completado
+                            </button>
+                        </form>
+                    }
+                    @if (Model.IsCustomer && Model.IsOwner && job.Status == "Completed" && !Model.HasReview)
+                    {
+                        <a asp-page="/Reviews/Create" asp-route-jobId="@job.Id"
+                           asp-route-technicianId="@Model.AssignedTechnicianId"
+                           class="btn btn-warning">Dejar reseña</a>
+                    }
+                    <a asp-page="/Jobs/Index" class="btn btn-outline-secondary">Volver</a>
+                </div>
+            </div>
+
+            <!-- Proposals section -->
+            @if (Model.CanSeeProposals && Model.Proposals is not null)
+            {
+                <h5 class="mb-2">Propuestas (@Model.Proposals.Count)</h5>
+                @if (Model.Proposals.Count == 0)
+                {
+                    <p class="text-muted">Aún no hay propuestas.</p>
+                }
+                else
+                {
+                    foreach (var p in Model.Proposals)
+                    {
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>@p.TechnicianName</strong>
+                                        <span class="badge bg-light text-dark ms-1">@p.Status</span>
+                                    </div>
+                                    <strong class="text-success">$@p.Price.ToString("N2")</strong>
+                                </div>
+                                @if (!string.IsNullOrEmpty(p.Message))
+                                {
+                                    <p class="small text-muted mt-1 mb-1">@p.Message</p>
+                                }
+                                <div class="d-flex gap-2 mt-1">
+                                    <a asp-page="/Technicians/Profile" asp-route-id="@p.TechnicianId"
+                                       class="btn btn-sm btn-outline-secondary">Ver perfil</a>
+                                    @if (Model.IsOwner && p.Status == "Pending" && job.Status == "Open")
+                                    {
+                                        <form method="post" asp-page-handler="Accept" asp-route-proposalId="@p.Id">
+                                            <button type="submit" class="btn btn-sm btn-primary"
+                                                    onclick="return confirm('¿Aceptar la propuesta de @p.TechnicianName?')">
+                                                Aceptar
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            }
+
+            <!-- Submit proposal form (Technician only, Open job) -->
+            @if (Model.IsTechnician && job.Status == "Open" && !Model.AlreadyProposed)
+            {
+                <div class="card shadow-sm mt-3">
+                    <div class="card-header bg-light">Enviar propuesta</div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(Model.ProposalError))
+                        {
+                            <div class="alert alert-danger">@Model.ProposalError</div>
+                        }
+                        <form method="post" asp-page-handler="SubmitProposal">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">Precio ($)</label>
+                                    <input asp-for="ProposalInput.Price" class="form-control" type="number" step="0.01" min="1" />
+                                    <span asp-validation-for="ProposalInput.Price" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Días estimados</label>
+                                    <input asp-for="ProposalInput.EstimatedDays" class="form-control" type="number" min="1" />
+                                    <span asp-validation-for="ProposalInput.EstimatedDays" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <label class="form-label">Carta de presentación</label>
+                                <textarea asp-for="ProposalInput.CoverLetter" class="form-control" rows="3"
+                                          placeholder="Describe tu experiencia y por qué eres el indicado..."></textarea>
+                                <span asp-validation-for="ProposalInput.CoverLetter" class="text-danger"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-2">Enviar propuesta</button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else if (Model.IsTechnician && Model.AlreadyProposed)
+            {
+                <div class="alert alert-info mt-3">Ya enviaste una propuesta para este trabajo.</div>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — FixHub</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/FixHub.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-dark bg-dark border-bottom shadow-sm mb-3">
+            <div class="container">
+                <a class="navbar-brand fw-bold" asp-page="/Index">🔧 FixHub</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target=".navbar-collapse" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-page="/Jobs/Index">Trabajos</a>
+                        </li>
+                        @if (User.IsInRole("Customer"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Jobs/My">Mis trabajos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Jobs/Create">+ Publicar</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Technician"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Technician/MyAssignments">Mis asignaciones</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="navbar-nav">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                    @User.Identity.Name
+                                    <span class="badge bg-secondary ms-1">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    @if (User.IsInRole("Technician"))
+                                    {
+                                        <li>
+                                            <a class="dropdown-item" asp-page="/Technicians/Profile"
+                                               asp-route-id="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value">
+                                                Mi perfil tecnico
+                                            </a>
+                                        </li>
+                                        <li><a class="dropdown-item" asp-page="/Technician/MyAssignments">Mis asignaciones</a></li>
+                                    }
+                                    @if (User.IsInRole("Customer"))
+                                    {
+                                        <li><a class="dropdown-item" asp-page="/Jobs/My">Mis trabajos</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Jobs/Create">Publicar trabajo</a></li>
+                                    }
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item text-danger" asp-page="/Account/Logout">Cerrar sesion</a></li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Account/Login">Entrar</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Account/Register">Registrarse</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        @if (TempData["Success"] is string success)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @success
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["Error"] is string error)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @error
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        <main role="main" class="pb-4">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted py-3 mt-4">
+        <div class="container text-center small">
+            &copy; 2026 FixHub — Marketplace de servicios del hogar
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

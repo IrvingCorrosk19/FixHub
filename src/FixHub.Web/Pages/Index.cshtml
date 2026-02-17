@@ -1,0 +1,45 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="py-5 text-center">
+    <h1 class="display-4 fw-bold">FixHub</h1>
+    <p class="lead text-muted">Conectamos clientes con tecnicos de confianza para servicios del hogar</p>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a asp-page="/Jobs/Index" class="btn btn-primary btn-lg me-2">Ver trabajos</a>
+        @if (User.IsInRole("Customer"))
+        {
+            <a asp-page="/Jobs/Create" class="btn btn-outline-primary btn-lg">Publicar trabajo</a>
+        }
+    }
+    else
+    {
+        <a asp-page="/Account/Register" class="btn btn-primary btn-lg me-2">Comenzar</a>
+        <a asp-page="/Account/Login" class="btn btn-outline-secondary btn-lg">Iniciar sesion</a>
+    }
+</div>
+
+<div class="row text-center g-4 mt-2">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm p-3">
+            <h5>Plomeria</h5>
+            <p class="text-muted small">Fugas, instalaciones, reparaciones</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm p-3">
+            <h5>Electricidad</h5>
+            <p class="text-muted small">Tomacorrientes, tableros, iluminacion</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm p-3">
+            <h5>Aire Acondicionado</h5>
+            <p class="text-muted small">Instalacion, mantenimiento, reparacion</p>
+        </div>
+    </div>
+</div>

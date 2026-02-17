@@ -1,0 +1,78 @@
+@page
+@model FixHub.Web.Pages.Technician.MyAssignmentsModel
+@{
+    ViewData["Title"] = "Mis asignaciones";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Mis asignaciones</h2>
+    <a asp-page="/Jobs/Index" class="btn btn-outline-primary">Ver trabajos disponibles</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+@if (Model.Assignments is not null && Model.Assignments.Items.Count > 0)
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Trabajo</th>
+                    <th>Categoría</th>
+                    <th>Cliente</th>
+                    <th>Dirección</th>
+                    <th>Precio</th>
+                    <th>Estado</th>
+                    <th>Aceptado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model.Assignments.Items)
+                {
+                    <tr>
+                        <td class="fw-semibold">@a.JobTitle</td>
+                        <td><span class="badge bg-light text-dark">@a.CategoryName</span></td>
+                        <td class="small text-muted">@a.CustomerName</td>
+                        <td class="small text-muted">@a.AddressText</td>
+                        <td class="text-success fw-semibold">$@a.AcceptedPrice.ToString("N2")</td>
+                        <td>
+                            <span class="badge @MyAssignmentsModel.StatusBadge(a.JobStatus)">
+                                @MyAssignmentsModel.StatusLabel(a.JobStatus)
+                            </span>
+                        </td>
+                        <td class="small text-muted">@a.AcceptedAt.ToString("dd/MM/yy")</td>
+                        <td>
+                            <a asp-page="/Jobs/Detail" asp-route-id="@a.JobId"
+                               class="btn btn-sm btn-outline-secondary">Ver</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Assignments.TotalPages > 1)
+    {
+        <nav>
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= Model.Assignments.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Assignments.Page ? "active" : "")">
+                        <a class="page-link" asp-page="/Technician/MyAssignments" asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="alert alert-light text-center py-5">
+        <p class="text-muted mb-0">Aún no tienes asignaciones. Envía propuestas para trabajos disponibles.</p>
+        <a asp-page="/Jobs/Index" class="btn btn-primary mt-3">Ver trabajos disponibles</a>
+    </div>
+}

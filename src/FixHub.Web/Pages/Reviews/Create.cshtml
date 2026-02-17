@@ -1,0 +1,53 @@
+@page
+@model FixHub.Web.Pages.Reviews.CreateModel
+@{
+    ViewData["Title"] = "Dejar reseña";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2 class="mb-3">Dejar reseña</h2>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="post">
+                    <input type="hidden" asp-for="Input.JobId" />
+                    <input type="hidden" asp-for="Input.RevieweeId" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Calificación</label>
+                        <div class="d-flex gap-2">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio"
+                                           asp-for="Input.Stars" value="@i" id="star@i" />
+                                    <label class="form-check-label" for="star@i">@i ★</label>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="Input.Stars" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.Comment" class="form-label">Comentario <span class="text-muted">(opcional)</span></label>
+                        <textarea asp-for="Input.Comment" class="form-control" rows="4"
+                                  placeholder="Describe tu experiencia con el técnico..."></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning">Publicar reseña</button>
+                        <a asp-page="/Jobs/Index" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

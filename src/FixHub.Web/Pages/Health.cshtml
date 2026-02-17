@@ -1,0 +1,24 @@
+@page
+@model FixHub.Web.Pages.HealthModel
+@{
+    ViewData["Title"] = "API Health";
+}
+
+<div class="container mt-4">
+    <h1>FixHub API Health</h1>
+
+    @if (Model.ApiHealth is not null)
+    {
+        <div class="alert alert-success">
+            <strong>Status:</strong> @Model.ApiHealth.Status <br />
+            <strong>Version:</strong> @Model.ApiHealth.Version <br />
+            <strong>Timestamp:</strong> @Model.ApiHealth.Timestamp.ToString("u")
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            No se pudo conectar a la API. Verifica que FixHub.API está corriendo.
+        </div>
+    }
+</div>

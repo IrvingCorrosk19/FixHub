@@ -1,0 +1,6 @@
+@FixHub.API_HostAddress = http://localhost:5286
+
+GET {{FixHub.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
