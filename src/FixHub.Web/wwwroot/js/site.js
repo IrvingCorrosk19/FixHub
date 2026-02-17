@@ -1,4 +1,14 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
-
-// Write your JavaScript code.
+// FixHub — UX: loading state en botones submit (FASE E)
+(function () {
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('form').forEach(function (form) {
+      form.addEventListener('submit', function () {
+        var btn = form.querySelector('button[type="submit"]');
+        if (btn && !btn.classList.contains('btn-loading')) {
+          btn.classList.add('btn-loading');
+          btn.disabled = true;
+        }
+      });
+    });
+  });
+})();

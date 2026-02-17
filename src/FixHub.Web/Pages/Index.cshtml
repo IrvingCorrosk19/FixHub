@@ -1,45 +1,170 @@
-﻿@page
+@page
 @model IndexModel
 @{
     ViewData["Title"] = "Inicio";
 }
 
-<div class="py-5 text-center">
-    <h1 class="display-4 fw-bold">FixHub</h1>
-    <p class="lead text-muted">Conectamos clientes con tecnicos de confianza para servicios del hogar</p>
+<section class="fixhub-hero">
+    <div class="fixhub-container">
+        <h1>Encuentra un técnico confiable en minutos</h1>
+        <p class="lead">Profesionales verificados, seguimiento en tiempo real y control total de tu servicio.</p>
+        <div class="d-flex flex-wrap gap-3">
+            <a asp-page="/Jobs/Create" class="btn btn-fixhub-primary btn-lg">Publicar trabajo</a>
+            <a asp-page="/Account/Register" class="btn btn-fixhub-outline btn-lg">Soy técnico</a>
+        </div>
+    </div>
+</section>
 
-    @if (User.Identity?.IsAuthenticated == true)
-    {
-        <a asp-page="/Jobs/Index" class="btn btn-primary btn-lg me-2">Ver trabajos</a>
-        @if (User.IsInRole("Customer"))
-        {
-            <a asp-page="/Jobs/Create" class="btn btn-outline-primary btn-lg">Publicar trabajo</a>
-        }
-    }
-    else
-    {
-        <a asp-page="/Account/Register" class="btn btn-primary btn-lg me-2">Comenzar</a>
-        <a asp-page="/Account/Login" class="btn btn-outline-secondary btn-lg">Iniciar sesion</a>
-    }
-</div>
+<section id="como-funciona" class="fixhub-how">
+    <div class="fixhub-container">
+        <h2 class="fixhub-section-title text-center">Cómo funciona</h2>
+        <p class="fixhub-section-subtitle text-center">En tres pasos obtienes el servicio que necesitas</p>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="fixhub-step-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </div>
+                        <h5 class="card-title">1. Publica tu necesidad</h5>
+                        <p class="card-text">Describe el trabajo que necesitas. Es rápido y gratis.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="fixhub-step-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        </div>
+                        <h5 class="card-title">2. Recibe propuestas</h5>
+                        <p class="card-text">Técnicos verificados te envían ofertas. Tú eliges.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="fixhub-step-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <h5 class="card-title">3. Elige y controla tu servicio</h5>
+                        <p class="card-text">Coordina, sigue el avance y paga con seguridad.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-<div class="row text-center g-4 mt-2">
-    <div class="col-md-4">
-        <div class="card h-100 border-0 shadow-sm p-3">
-            <h5>Plomeria</h5>
-            <p class="text-muted small">Fugas, instalaciones, reparaciones</p>
+<section class="fixhub-trust">
+    <div class="fixhub-container">
+        <h2 class="fixhub-section-title text-center">Por qué confiar en FixHub</h2>
+        <p class="fixhub-section-subtitle text-center">Diseñado para tu tranquilidad</p>
+        <div class="row g-4">
+            <div class="col-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="fixhub-trust-icon mx-auto">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <h6 class="card-title">Técnicos verificados</h6>
+                        <p class="card-text mb-0">Perfiles revisados y con historial.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="fixhub-trust-icon mx-auto">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </div>
+                        <h6 class="card-title">Sistema de reputación</h6>
+                        <p class="card-text mb-0">Valoraciones y comentarios reales.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="fixhub-trust-icon mx-auto">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                        <h6 class="card-title">Pago seguro</h6>
+                        <p class="card-text mb-0">Transacciones protegidas.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="fixhub-trust-icon mx-auto">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <h6 class="card-title">Protección FixHub</h6>
+                        <p class="card-text mb-0">Soporte ante incidencias.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card h-100 border-0 shadow-sm p-3">
-            <h5>Electricidad</h5>
-            <p class="text-muted small">Tomacorrientes, tableros, iluminacion</p>
+</section>
+
+<section class="fixhub-categories">
+    <div class="fixhub-container">
+        <h2 class="fixhub-section-title text-center">Categorías de servicio</h2>
+        <p class="fixhub-section-subtitle text-center">Elige el tipo de trabajo que necesitas</p>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="fixhub-cat-card">
+                    <div class="fixhub-cat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    </div>
+                    <h5 class="fixhub-cat-title">Plomería</h5>
+                    <p class="fixhub-cat-desc">Fugas, instalaciones, reparaciones y mantenimiento.</p>
+                    <a asp-page="/Jobs/Create" class="btn btn-primary btn-fixhub-primary btn-sm">Solicitar</a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="fixhub-cat-card">
+                    <div class="fixhub-cat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    </div>
+                    <h5 class="fixhub-cat-title">Electricidad</h5>
+                    <p class="fixhub-cat-desc">Tomacorrientes, tableros, iluminación y reparaciones.</p>
+                    <a asp-page="/Jobs/Create" class="btn btn-primary btn-fixhub-primary btn-sm">Solicitar</a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="fixhub-cat-card">
+                    <div class="fixhub-cat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                    </div>
+                    <h5 class="fixhub-cat-title">Handyman</h5>
+                    <p class="fixhub-cat-desc">Reparaciones generales, montaje e instalaciones.</p>
+                    <a asp-page="/Jobs/Create" class="btn btn-primary btn-fixhub-primary btn-sm">Solicitar</a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="fixhub-cat-card">
+                    <div class="fixhub-cat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="4"/></svg>
+                    </div>
+                    <h5 class="fixhub-cat-title">Aire Acondicionado</h5>
+                    <p class="fixhub-cat-desc">Instalación, mantenimiento y reparación de equipos.</p>
+                    <a asp-page="/Jobs/Create" class="btn btn-primary btn-fixhub-primary btn-sm">Solicitar</a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="fixhub-cat-card">
+                    <div class="fixhub-cat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+                    </div>
+                    <h5 class="fixhub-cat-title">Pintura</h5>
+                    <p class="fixhub-cat-desc">Pintura interior, exterior y acabados.</p>
+                    <a asp-page="/Jobs/Create" class="btn btn-primary btn-fixhub-primary btn-sm">Solicitar</a>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card h-100 border-0 shadow-sm p-3">
-            <h5>Aire Acondicionado</h5>
-            <p class="text-muted small">Instalacion, mantenimiento, reparacion</p>
-        </div>
-    </div>
-</div>
+</section>

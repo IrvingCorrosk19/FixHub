@@ -1,0 +1,424 @@
+/* FixHub — Custom UX/UI (FASE A–E) */
+:root {
+  --fixhub-primary: #1E3A8A;
+  --fixhub-accent: #2563EB;
+  --fixhub-text: #111827;
+  --fixhub-bg: #F9FAFB;
+  --fixhub-success: #16A34A;
+  --fixhub-white: #FFFFFF;
+  --fixhub-border: #E5E7EB;
+  --fixhub-muted: #6B7280;
+  --fixhub-shadow: 0 1px 3px rgba(0,0,0,.08);
+  --fixhub-shadow-lg: 0 10px 40px -10px rgba(30, 58, 138, .15);
+  --fixhub-radius: 10px;
+  --fixhub-radius-btn: 8px;
+  --fixhub-transition: 0.2s ease;
+}
+
+/* Base */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--fixhub-text);
+  background-color: var(--fixhub-bg);
+}
+
+.fixhub-container {
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .fixhub-container { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+/* Navbar (FASE B) */
+.fixhub-navbar {
+  background: var(--fixhub-white) !important;
+  box-shadow: var(--fixhub-shadow);
+  padding: 0.6rem 0;
+}
+
+.fixhub-navbar .navbar-brand {
+  color: var(--fixhub-primary) !important;
+  font-weight: 700;
+  font-size: 1.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fixhub-navbar .navbar-brand svg {
+  width: 28px;
+  height: 28px;
+}
+
+.fixhub-navbar .nav-link {
+  color: var(--fixhub-text) !important;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: var(--fixhub-radius-btn);
+  transition: background-color var(--fixhub-transition), color var(--fixhub-transition);
+}
+
+.fixhub-navbar .nav-link:hover {
+  background-color: var(--fixhub-bg);
+  color: var(--fixhub-accent) !important;
+}
+
+.fixhub-navbar .dropdown-toggle {
+  color: var(--fixhub-text) !important;
+}
+
+.fixhub-navbar .dropdown-menu {
+  border-radius: var(--fixhub-radius);
+  box-shadow: var(--fixhub-shadow-lg);
+  border: 1px solid var(--fixhub-border);
+}
+
+.fixhub-navbar .dropdown-item {
+  padding: 0.5rem 1rem;
+}
+
+.fixhub-navbar .badge-role {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--fixhub-accent);
+}
+
+/* Buttons (FASE D) */
+.btn-fixhub-primary {
+  background: var(--fixhub-accent);
+  color: var(--fixhub-white);
+  border: none;
+  border-radius: var(--fixhub-radius-btn);
+  font-weight: 600;
+  padding: 0.65rem 1.35rem;
+  transition: background-color var(--fixhub-transition), transform 0.15s ease;
+}
+
+.btn-fixhub-primary:hover {
+  background: var(--fixhub-primary);
+  color: var(--fixhub-white);
+  transform: translateY(-1px);
+}
+
+.btn-fixhub-outline {
+  background: transparent;
+  color: var(--fixhub-accent);
+  border: 2px solid var(--fixhub-accent);
+  border-radius: var(--fixhub-radius-btn);
+  font-weight: 600;
+  padding: 0.6rem 1.25rem;
+  transition: background-color var(--fixhub-transition), color var(--fixhub-transition);
+}
+
+.btn-fixhub-outline:hover {
+  background: var(--fixhub-accent);
+  color: var(--fixhub-white);
+}
+
+/* Hero (FASE A) — full-width escape from container */
+.fixhub-hero {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  background: linear-gradient(135deg, var(--fixhub-primary) 0%, #1e40af 50%, var(--fixhub-accent) 100%);
+  color: var(--fixhub-white);
+  padding: 4rem 0 5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.fixhub-hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5L35 20H50L38 30L42 45L30 38L18 45L22 30L10 20H25L30 5Z' fill='%23fff' fill-opacity='.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.fixhub-hero .fixhub-container {
+  position: relative;
+  z-index: 1;
+}
+
+.fixhub-hero h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,.1);
+}
+
+.fixhub-hero .lead {
+  font-size: 1.1rem;
+  opacity: .95;
+  max-width: 520px;
+  margin-bottom: 1.75rem;
+  line-height: 1.6;
+}
+
+.fixhub-hero .btn-fixhub-primary {
+  background: var(--fixhub-white);
+  color: var(--fixhub-primary);
+  padding: 0.85rem 1.75rem;
+  font-size: 1.05rem;
+}
+
+.fixhub-hero .btn-fixhub-primary:hover {
+  background: var(--fixhub-bg);
+  color: var(--fixhub-primary);
+}
+
+.fixhub-hero .btn-fixhub-outline {
+  border-color: rgba(255,255,255,.8);
+  color: var(--fixhub-white);
+}
+
+.fixhub-hero .btn-fixhub-outline:hover {
+  background: rgba(255,255,255,.2);
+  color: var(--fixhub-white);
+  border-color: var(--fixhub-white);
+}
+
+/* Section titles */
+.fixhub-section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+  margin-bottom: 0.5rem;
+}
+
+.fixhub-section-subtitle {
+  color: var(--fixhub-muted);
+  margin-bottom: 2rem;
+}
+
+/* Cómo funciona (FASE A) */
+.fixhub-how {
+  padding: 4rem 0;
+}
+
+.fixhub-how .card {
+  border: none;
+  border-radius: var(--fixhub-radius);
+  box-shadow: var(--fixhub-shadow);
+  transition: box-shadow var(--fixhub-transition), transform var(--fixhub-transition);
+  height: 100%;
+}
+
+.fixhub-how .card:hover {
+  box-shadow: var(--fixhub-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.fixhub-how .card-body {
+  padding: 1.5rem;
+}
+
+.fixhub-how .fixhub-step-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(30, 58, 138, .1);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.fixhub-how .fixhub-step-icon svg {
+  width: 26px;
+  height: 26px;
+  color: var(--fixhub-accent);
+}
+
+.fixhub-how .card-title {
+  font-weight: 700;
+  color: var(--fixhub-text);
+  margin-bottom: 0.35rem;
+}
+
+.fixhub-how .card-text {
+  color: var(--fixhub-muted);
+  font-size: 0.95rem;
+}
+
+/* Confianza (FASE A) — full-width section */
+.fixhub-trust {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  padding: 3rem 0 4rem;
+  background: var(--fixhub-white);
+}
+
+.fixhub-trust .card {
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  transition: box-shadow var(--fixhub-transition), border-color var(--fixhub-transition);
+  height: 100%;
+}
+
+.fixhub-trust .card:hover {
+  box-shadow: var(--fixhub-shadow);
+  border-color: var(--fixhub-accent);
+}
+
+.fixhub-trust .fixhub-trust-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(22, 163, 74, .1);
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.fixhub-trust .fixhub-trust-icon svg {
+  width: 22px;
+  height: 22px;
+  color: var(--fixhub-success);
+}
+
+.fixhub-trust .card-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--fixhub-text);
+  margin-bottom: 0.25rem;
+}
+
+.fixhub-trust .card-text {
+  font-size: 0.875rem;
+  color: var(--fixhub-muted);
+}
+
+/* Category cards (FASE C) */
+.fixhub-categories {
+  padding: 3rem 0 4rem;
+}
+
+.fixhub-cat-card {
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  padding: 1.75rem;
+  height: 100%;
+  transition: box-shadow var(--fixhub-transition), transform var(--fixhub-transition);
+  background: var(--fixhub-white);
+}
+
+.fixhub-cat-card:hover {
+  box-shadow: var(--fixhub-shadow-lg);
+  transform: translateY(-4px);
+}
+
+.fixhub-cat-card .fixhub-cat-icon {
+  width: 56px;
+  height: 56px;
+  background: rgba(30, 58, 138, .08);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.fixhub-cat-card .fixhub-cat-icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--fixhub-accent);
+}
+
+.fixhub-cat-card .fixhub-cat-title {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--fixhub-text);
+  margin-bottom: 0.35rem;
+}
+
+.fixhub-cat-card .fixhub-cat-desc {
+  font-size: 0.9rem;
+  color: var(--fixhub-muted);
+  margin-bottom: 1rem;
+}
+
+.fixhub-cat-card .btn {
+  border-radius: var(--fixhub-radius-btn);
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* Main content area (non-home pages) */
+.fixhub-main .container {
+  max-width: 1140px;
+}
+
+.fixhub-main h1, .fixhub-main h2 {
+  font-weight: 700;
+  color: var(--fixhub-text);
+}
+
+/* Alerts (FASE E) */
+.alert {
+  border-radius: var(--fixhub-radius);
+  border: none;
+}
+
+.alert-success {
+  background: rgba(22, 163, 74, .12);
+  color: #0d6832;
+}
+
+.alert-danger {
+  background: rgba(220, 38, 38, .1);
+  color: #b91c1c;
+}
+
+/* Footer */
+.fixhub-footer {
+  background: var(--fixhub-white);
+  border-top: 1px solid var(--fixhub-border);
+  color: var(--fixhub-muted);
+  font-size: 0.875rem;
+  padding: 1.25rem 0;
+  margin-top: auto;
+}
+
+/* Loading state (FASE E) */
+.btn-loading {
+  pointer-events: none;
+  position: relative;
+  color: transparent !important;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  top: 50%;
+  left: 50%;
+  margin: -9px 0 0 -9px;
+  border: 2px solid #1E3A8A;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: fixhub-spin 0.6s linear infinite;
+}
+
+.btn-primary.btn-loading::after,
+.btn-fixhub-primary.btn-loading::after {
+  border-color: rgba(255,255,255,.9);
+  border-right-color: transparent;
+}
+
+@keyframes fixhub-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Utility */
+.fixhub-text-muted { color: var(--fixhub-muted); }

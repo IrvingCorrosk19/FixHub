@@ -1,76 +1,65 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] — FixHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-custom.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/FixHub.Web.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-dark bg-dark border-bottom shadow-sm mb-3">
-            <div class="container">
-                <a class="navbar-brand fw-bold" asp-page="/Index">🔧 FixHub</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                        data-bs-target=".navbar-collapse" aria-label="Toggle navigation">
+<body class="d-flex flex-column min-vh-100">
+    <header class="sticky-top">
+        <nav class="navbar navbar-expand-lg fixhub-navbar">
+            <div class="fixhub-container container-fluid">
+                <a class="navbar-brand" asp-page="/Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    FixHub
+                </a>
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#fixhubNav" aria-label="Abrir menú">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="collapse navbar-collapse" id="fixhubNav">
+                    <ul class="navbar-nav me-auto align-items-lg-center">
                         <li class="nav-item">
                             <a class="nav-link" asp-page="/Jobs/Index">Trabajos</a>
                         </li>
-                        @if (User.IsInRole("Customer"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-page="/Jobs/My">Mis trabajos</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-page="/Jobs/Create">+ Publicar</a>
-                            </li>
-                        }
-                        @if (User.IsInRole("Technician"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-page="/Technician/MyAssignments">Mis asignaciones</a>
-                            </li>
-                        }
+                        <li class="nav-item">
+                            <a class="nav-link" asp-page="/Index" asp-fragment="como-funciona">Cómo funciona</a>
+                        </li>
                     </ul>
-                    <ul class="navbar-nav">
+                    <ul class="navbar-nav align-items-lg-center">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
                                     @User.Identity.Name
-                                    <span class="badge bg-secondary ms-1">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
+                                    <span class="badge badge-role ms-1">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    @if (User.IsInRole("Technician"))
-                                    {
-                                        <li>
-                                            <a class="dropdown-item" asp-page="/Technicians/Profile"
-                                               asp-route-id="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value">
-                                                Mi perfil tecnico
-                                            </a>
-                                        </li>
-                                        <li><a class="dropdown-item" asp-page="/Technician/MyAssignments">Mis asignaciones</a></li>
-                                    }
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                                     @if (User.IsInRole("Customer"))
                                     {
                                         <li><a class="dropdown-item" asp-page="/Jobs/My">Mis trabajos</a></li>
                                         <li><a class="dropdown-item" asp-page="/Jobs/Create">Publicar trabajo</a></li>
                                     }
+                                    @if (User.IsInRole("Technician"))
+                                    {
+                                        <li><a class="dropdown-item" asp-page="/Technician/MyAssignments">Mis asignaciones</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Technicians/Profile" asp-route-id="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value">Mi perfil técnico</a></li>
+                                    }
                                     <li><hr class="dropdown-divider" /></li>
-                                    <li><a class="dropdown-item text-danger" asp-page="/Account/Logout">Cerrar sesion</a></li>
+                                    <li><a class="dropdown-item text-danger" asp-page="/Account/Logout">Cerrar sesión</a></li>
                                 </ul>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-page="/Account/Login">Entrar</a>
+                                <a class="nav-link" asp-page="/Account/Login">Ingresar</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-page="/Account/Register">Registrarse</a>
@@ -81,29 +70,32 @@
             </div>
         </nav>
     </header>
-    <div class="container">
-        @if (TempData["Success"] is string success)
-        {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                @success
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-        @if (TempData["Error"] is string error)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                @error
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
+
+    <div class="fixhub-main flex-grow-1">
+        <div class="container">
+            @if (TempData["Success"] is string success)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @success
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            }
+            @if (TempData["Error"] is string error)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @error
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            }
+        </div>
         <main role="main" class="pb-4">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted py-3 mt-4">
-        <div class="container text-center small">
-            &copy; 2026 FixHub — Marketplace de servicios del hogar
+    <footer class="fixhub-footer">
+        <div class="fixhub-container text-center">
+            &copy; @DateTime.UtcNow.Year FixHub — Marketplace de servicios del hogar
         </div>
     </footer>
 
