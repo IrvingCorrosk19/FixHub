@@ -410,6 +410,13 @@ namespace FixHub.Infrastructure.Persistence.Migrations
                             Icon = "paint-roller",
                             IsActive = true,
                             Name = "Pintura"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Icon = "key",
+                            IsActive = true,
+                            Name = "Cerrajería"
                         });
                 });
 

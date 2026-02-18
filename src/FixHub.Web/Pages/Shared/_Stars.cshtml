@@ -1,0 +1,28 @@
+@model double
+@{
+    var r = Convert.ToDouble(Model);
+    var rating = Math.Round(Math.Clamp(r, 0, 5), 1);
+    var full = (int)rating;
+    var hasHalf = (rating - full) >= 0.25 && (rating - full) < 0.75;
+    var empty = 5 - full - (hasHalf ? 1 : 0);
+    var gradientId = "starhalf-" + Guid.NewGuid().ToString("N")[..8];
+}
+<span class="fixhub-stars" aria-label="@rating.ToString("N1") de 5 estrellas">
+    @for (var i = 0; i < full; i++)
+    {
+        <span class="fixhub-star fixhub-star-full"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+    }
+    @if (hasHalf)
+    {
+        <span class="fixhub-star fixhub-star-half">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <defs><linearGradient id="@gradientId" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="50%" stop-color="currentColor"/><stop offset="50%" stop-color="var(--fixhub-star-empty)"/></linearGradient></defs>
+                <path fill="url(#@gradientId)" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+        </span>
+    }
+    @for (var i = 0; i < empty; i++)
+    {
+        <span class="fixhub-star fixhub-star-empty"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+    }
+</span>

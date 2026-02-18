@@ -39,10 +39,23 @@ public class CreateModel(IFixHubApiClient apiClient) : PageModel
         public decimal? BudgetMax { get; set; }
     }
 
-    public void OnGet() { }
+    public IActionResult OnGet()
+    {
+        if (!SessionUser.IsCustomer(User))
+        {
+            TempData["Error"] = "Solo los clientes pueden publicar trabajos. Inicia sesión con una cuenta de tipo Cliente o regístrate como Cliente.";
+            return RedirectToPage("/Jobs/Index");
+        }
+        return Page();
+    }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (!SessionUser.IsCustomer(User))
+        {
+            TempData["Error"] = "Solo los clientes pueden publicar trabajos.";
+            return RedirectToPage("/Jobs/Index");
+        }
         if (!ModelState.IsValid) return Page();
 
         var result = await apiClient.CreateJobAsync(new CreateJobRequest(
@@ -56,7 +69,9 @@ public class CreateModel(IFixHubApiClient apiClient) : PageModel
 
         if (!result.IsSuccess)
         {
-            ErrorMessage = result.ErrorMessage ?? "Error al publicar el trabajo.";
+            ErrorMessage = result.StatusCode == 403
+                ? "Solo los clientes pueden publicar trabajos. Tu cuenta es de técnico."
+                : (result.ErrorMessage ?? "Error al publicar el trabajo.");
             return Page();
         }
 

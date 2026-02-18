@@ -34,7 +34,8 @@ public class ServiceCategoryConfiguration : IEntityTypeConfiguration<ServiceCate
             new ServiceCategory { Id = 2, Name = "Electricidad", Icon = "zap", IsActive = true },
             new ServiceCategory { Id = 3, Name = "Handyman", Icon = "tool", IsActive = true },
             new ServiceCategory { Id = 4, Name = "Aire Acondicionado", Icon = "wind", IsActive = true },
-            new ServiceCategory { Id = 5, Name = "Pintura", Icon = "paint-roller", IsActive = true }
+            new ServiceCategory { Id = 5, Name = "Pintura", Icon = "paint-roller", IsActive = true },
+            new ServiceCategory { Id = 6, Name = "Cerrajería", Icon = "key", IsActive = true }
         );
     }
 }

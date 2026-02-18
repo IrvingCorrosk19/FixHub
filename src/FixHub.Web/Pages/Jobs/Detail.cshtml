@@ -67,20 +67,36 @@ else
                 {
                     foreach (var p in Model.Proposals)
                     {
-                        <div class="card mb-2">
-                            <div class="card-body py-2">
-                                <div class="d-flex justify-content-between">
+                        var profile = Model.TechnicianProfiles.GetValueOrDefault(p.TechnicianId);
+                        var rating = profile != null ? (double)profile.AvgRating : 0d;
+                        <div class="card mb-2 fixhub-proposal-card">
+                            <div class="card-body py-3">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                                     <div>
-                                        <strong>@p.TechnicianName</strong>
-                                        <span class="badge bg-light text-dark ms-1">@p.Status</span>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <strong class="fixhub-proposal-name">@p.TechnicianName</strong>
+                                            <span class="badge bg-light text-dark">@p.Status</span>
+                                            @if (profile?.IsVerified == true)
+                                            {
+                                                <span class="badge badge-verified">Verificado</span>
+                                            }
+                                        </div>
+                                        @if (profile != null)
+                                        {
+                                            <div class="fixhub-proposal-rep mt-1">
+                                                <partial name="_Stars" model="@rating" />
+                                                <span>@profile.AvgRating.ToString("N1")</span>
+                                                <span class="ms-1">· Trabajos completados: @profile.CompletedJobs</span>
+                                            </div>
+                                        }
                                     </div>
                                     <strong class="text-success">$@p.Price.ToString("N2")</strong>
                                 </div>
                                 @if (!string.IsNullOrEmpty(p.Message))
                                 {
-                                    <p class="small text-muted mt-1 mb-1">@p.Message</p>
+                                    <p class="small text-muted mt-2 mb-0">@p.Message</p>
                                 }
-                                <div class="d-flex gap-2 mt-1">
+                                <div class="d-flex gap-2 mt-2">
                                     <a asp-page="/Technicians/Profile" asp-route-id="@p.TechnicianId"
                                        class="btn btn-sm btn-outline-secondary">Ver perfil</a>
                                     @if (Model.IsOwner && p.Status == "Pending" && job.Status == "Open")

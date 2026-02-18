@@ -11,6 +11,7 @@ public class DetailModel(IFixHubApiClient apiClient) : PageModel
 {
     public JobDto? Job { get; set; }
     public List<ProposalDto>? Proposals { get; set; }
+    public Dictionary<Guid, TechnicianProfileDto> TechnicianProfiles { get; set; } = new();
     public string? ProposalError { get; set; }
     public bool AlreadyProposed { get; set; }
     public bool HasReview { get; set; }
@@ -115,6 +116,13 @@ public class DetailModel(IFixHubApiClient apiClient) : PageModel
                 var accepted = Proposals?.FirstOrDefault(p => p.Status == "Accepted");
                 AssignedTechnicianId = accepted?.TechnicianId;
                 HasReview = false;
+
+                foreach (var techId in Proposals?.Select(p => p.TechnicianId).Distinct() ?? [])
+                {
+                    var profileResult = await apiClient.GetTechnicianProfileAsync(techId);
+                    if (profileResult.IsSuccess && profileResult.Value != null)
+                        TechnicianProfiles[techId] = profileResult.Value;
+                }
             }
         }
         else if (IsTechnician)

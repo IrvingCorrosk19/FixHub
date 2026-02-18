@@ -422,3 +422,183 @@ body {
 
 /* Utility */
 .fixhub-text-muted { color: var(--fixhub-muted); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DASHBOARD TÉCNICO (Jobs/Index cuando rol Technician)
+   FASE 1–4: KPIs, secciones por estado, cards, micro UX
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.fixhub-tech-kpis { padding-top: 0.5rem; }
+.fixhub-kpi-card {
+  background: var(--fixhub-white);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  padding: 1.25rem;
+  transition: box-shadow var(--fixhub-transition), transform var(--fixhub-transition);
+}
+.fixhub-kpi-card:hover {
+  box-shadow: var(--fixhub-shadow-lg);
+  transform: translateY(-2px);
+}
+.fixhub-kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+.fixhub-kpi-icon svg { width: 20px; height: 20px; }
+.fixhub-kpi-icon.fixhub-kpi-open { background: rgba(22, 163, 74, .12); color: var(--fixhub-success); }
+.fixhub-kpi-icon.fixhub-kpi-assigned { background: rgba(37, 99, 235, .12); color: var(--fixhub-accent); }
+.fixhub-kpi-icon.fixhub-kpi-completed { background: rgba(107, 114, 128, .15); color: var(--fixhub-muted); }
+.fixhub-kpi-icon.fixhub-kpi-earnings { background: rgba(22, 163, 74, .12); color: var(--fixhub-success); }
+.fixhub-kpi-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+  line-height: 1.2;
+}
+.fixhub-kpi-label {
+  font-size: 0.8rem;
+  color: var(--fixhub-muted);
+  margin-top: 0.25rem;
+}
+
+.fixhub-tech-sections { padding-bottom: 2rem; }
+.fixhub-tech-section-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.fixhub-tech-section-title-muted { color: var(--fixhub-muted); }
+.fixhub-tech-section-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.fixhub-dot-green { background: var(--fixhub-success); }
+.fixhub-dot-blue { background: var(--fixhub-accent); }
+.fixhub-dot-gray { background: var(--fixhub-muted); }
+
+.fixhub-job-card {
+  background: var(--fixhub-white);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  transition: box-shadow var(--fixhub-transition), transform var(--fixhub-transition);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.fixhub-job-card:hover {
+  box-shadow: var(--fixhub-shadow-lg);
+  transform: translateY(-3px);
+}
+.fixhub-job-card-open { border-left: 4px solid var(--fixhub-success); }
+.fixhub-job-card-assigned { border-left: 4px solid var(--fixhub-accent); }
+.fixhub-job-card-completed { border-left: 4px solid var(--fixhub-border); }
+.fixhub-job-card-body { padding: 1.35rem; flex: 1; }
+.fixhub-job-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+  margin-bottom: 0.25rem;
+}
+.fixhub-job-card-meta { font-size: 0.875rem; color: var(--fixhub-muted); }
+.fixhub-job-card-desc { font-size: 0.9rem; color: var(--fixhub-text); margin-bottom: 0.75rem; }
+.fixhub-job-card-budget {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--fixhub-success);
+  margin-bottom: 0.35rem;
+}
+.fixhub-job-card-completed .fixhub-job-card-budget { font-weight: 600; }
+.fixhub-job-card-date { font-size: 0.8rem; color: var(--fixhub-muted); margin-bottom: 0; }
+.fixhub-job-card-footer {
+  padding: 1rem 1.35rem;
+  border-top: 1px solid var(--fixhub-border);
+  background: rgba(249, 250, 251, .6);
+  border-radius: 0 0 var(--fixhub-radius) var(--fixhub-radius);
+}
+.fixhub-badge-open { background: var(--fixhub-success); color: #fff; }
+.fixhub-badge-assigned { background: var(--fixhub-accent); color: #fff; }
+.fixhub-badge-completed { background: var(--fixhub-muted); color: #fff; }
+
+.fixhub-empty-block {
+  padding: 2rem;
+  text-align: center;
+  background: var(--fixhub-white);
+  border: 1px dashed var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+}
+.fixhub-empty-block-muted { background: rgba(249, 250, 251, .8); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   REPUTACIÓN VISUAL (FASE 4–5): estrellas dinámicas
+   ═══════════════════════════════════════════════════════════════════════════════ */
+:root {
+  --fixhub-star-full: #FBBF24;
+  --fixhub-star-empty: #D1D5DB;
+}
+.fixhub-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  transition: opacity var(--fixhub-transition);
+}
+.fixhub-star {
+  display: inline-flex;
+  line-height: 0;
+}
+.fixhub-star svg {
+  width: 1em;
+  height: 1em;
+  transition: transform var(--fixhub-transition);
+}
+.fixhub-stars:hover .fixhub-star svg { transform: scale(1.05); }
+.fixhub-star-full { color: var(--fixhub-star-full); }
+.fixhub-star-empty { color: var(--fixhub-star-empty); }
+.fixhub-star-half { color: var(--fixhub-star-full); }
+.fixhub-stars.fixhub-stars-sm .fixhub-star svg { width: 0.875em; height: 0.875em; }
+.fixhub-stars.fixhub-stars-lg .fixhub-star svg { width: 1.35em; height: 1.35em; }
+
+/* Card de reputación (FASE 1) */
+.fixhub-rep-card {
+  background: var(--fixhub-white);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  padding: 1.35rem 1.5rem;
+  transition: box-shadow var(--fixhub-transition), border-color var(--fixhub-transition);
+}
+.fixhub-rep-card:hover {
+  box-shadow: var(--fixhub-shadow);
+  border-color: var(--fixhub-accent);
+}
+.fixhub-rep-rating-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+  line-height: 1;
+}
+.fixhub-rep-meta { font-size: 0.85rem; color: var(--fixhub-muted); margin-top: 0.35rem; }
+.fixhub-rep-badge-good { color: var(--fixhub-success); font-size: 0.8rem; font-weight: 600; }
+.fixhub-rep-badge-warn { color: #B45309; font-size: 0.8rem; font-weight: 600; }
+.fixhub-rep-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; }
+.fixhub-rep-verified { color: var(--fixhub-success); font-size: 0.85rem; }
+
+/* Propuesta con reputación (FASE 3) */
+.fixhub-proposal-card {
+  border-radius: var(--fixhub-radius);
+  border: 1px solid var(--fixhub-border);
+  transition: box-shadow var(--fixhub-transition);
+}
+.fixhub-proposal-card:hover { box-shadow: var(--fixhub-shadow); }
+.fixhub-proposal-name { font-weight: 700; color: var(--fixhub-text); }
+.fixhub-proposal-rep { font-size: 0.9rem; color: var(--fixhub-muted); }
+.fixhub-proposal-rep .fixhub-stars { margin-right: 0.25rem; }
+.badge-verified { background: rgba(22, 163, 74, .15); color: var(--fixhub-success); font-weight: 600; }

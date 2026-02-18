@@ -1,103 +1,294 @@
 @page
 @model FixHub.Web.Pages.Jobs.IndexModel
 @{
-    ViewData["Title"] = "Trabajos disponibles";
+    ViewData["Title"] = Model.IsTechnician ? "Panel del técnico" : "Trabajos disponibles";
 }
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Trabajos disponibles</h2>
-    @if (Model.IsCustomer)
-    {
-        <a asp-page="/Jobs/Create" class="btn btn-primary">+ Publicar trabajo</a>
-    }
-</div>
 
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
-    <div class="alert alert-danger">@Model.ErrorMessage</div>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
 }
 
-<!-- Filtros -->
-<form method="get" class="row g-2 mb-3">
-    <div class="col-auto">
-        <select name="status" class="form-select form-select-sm">
-            <option value="">Todos los estados</option>
-            <option value="1" selected="@(Model.StatusFilter == 1)">Abierto</option>
-            <option value="2" selected="@(Model.StatusFilter == 2)">Asignado</option>
-            <option value="3" selected="@(Model.StatusFilter == 3)">En progreso</option>
-            <option value="4" selected="@(Model.StatusFilter == 4)">Completado</option>
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-sm btn-outline-secondary">Filtrar</button>
-    </div>
-</form>
-
-@if (Model.Jobs is not null && Model.Jobs.Items.Count > 0)
+@if (Model.IsTechnician)
 {
-    <div class="row row-cols-1 row-cols-md-2 g-3">
-        @foreach (var job in Model.Jobs.Items)
-        {
-            <div class="col">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <h5 class="card-title mb-1">@job.Title</h5>
-                            <span class="badge @StatusBadge(job.Status)">@job.Status</span>
-                        </div>
-                        <p class="text-muted small mb-1">
-                            <strong>@job.CategoryName</strong> &nbsp;·&nbsp; @job.AddressText
-                        </p>
-                        <p class="card-text small">@job.Description.Substring(0, Math.Min(job.Description.Length, 120))@(job.Description.Length > 120 ? "..." : "")</p>
-                        @if (job.BudgetMin.HasValue || job.BudgetMax.HasValue)
-                        {
-                            <p class="text-success small mb-1">
-                                Presupuesto: $@(job.BudgetMin?.ToString("N0") ?? "?") — $@(job.BudgetMax?.ToString("N0") ?? "?")
-                            </p>
-                        }
-                        <p class="text-muted small">Por: @job.CustomerName &nbsp;·&nbsp; @job.CreatedAt.ToString("dd/MM/yyyy")</p>
+    @* Reputación (FASE 1) *@
+    @if (Model.MyProfile != null)
+    {
+        var prof = Model.MyProfile;
+        var rating = (double)prof.AvgRating;
+        <div class="fixhub-rep-card mb-4">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fixhub-rep-rating-value">@prof.AvgRating.ToString("N1")</span>
+                        <span class="fixhub-stars fixhub-stars-lg"><partial name="_Stars" model="@rating" /></span>
                     </div>
-                    <div class="card-footer bg-transparent">
-                        <a asp-page="/Jobs/Detail" asp-route-id="@job.Id" class="btn btn-sm btn-outline-primary">Ver detalle</a>
+                    <p class="fixhub-rep-meta mb-0">Trabajos completados: @prof.CompletedJobs</p>
+                    @if (rating >= 4.5)
+                    {
+                        <p class="fixhub-rep-badge-good mb-0 mt-1">Excelente reputación</p>
+                    }
+                    else if (rating < 3)
+                    {
+                        <p class="fixhub-rep-badge-warn mb-0 mt-1">Revisa tus valoraciones</p>
+                    }
+                </div>
+                @if (prof.IsVerified)
+                {
+                    <span class="badge badge-verified ms-auto">✔ Técnico verificado</span>
+                }
+            </div>
+        </div>
+    }
+
+    @* FASE 1 — KPI RESUMEN SUPERIOR *@
+    <section class="fixhub-tech-kpis mb-4">
+        <div class="row g-3">
+            <div class="col-6 col-lg-3">
+                <div class="fixhub-kpi-card">
+                    <div class="fixhub-kpi-icon fixhub-kpi-open">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                     </div>
+                    <div class="fixhub-kpi-value">@Model.KpiOpen</div>
+                    <div class="fixhub-kpi-label">Trabajos disponibles</div>
                 </div>
             </div>
-        }
-    </div>
+            <div class="col-6 col-lg-3">
+                <div class="fixhub-kpi-card">
+                    <div class="fixhub-kpi-icon fixhub-kpi-assigned">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <div class="fixhub-kpi-value">@Model.KpiAssigned</div>
+                    <div class="fixhub-kpi-label">Asignados</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="fixhub-kpi-card">
+                    <div class="fixhub-kpi-icon fixhub-kpi-completed">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <div class="fixhub-kpi-value">@Model.KpiCompleted</div>
+                    <div class="fixhub-kpi-label">Completados</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="fixhub-kpi-card">
+                    <div class="fixhub-kpi-icon fixhub-kpi-earnings">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <div class="fixhub-kpi-value">$@Model.KpiEarnings.ToString("N0")</div>
+                    <div class="fixhub-kpi-label">Ganancias estimadas</div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <!-- Paginación -->
-    @if (Model.Jobs.TotalPages > 1)
-    {
-        <nav class="mt-3">
-            <ul class="pagination justify-content-center">
-                @for (int i = 1; i <= Model.Jobs.TotalPages; i++)
-                {
-                    <li class="page-item @(i == Model.Jobs.Page ? "active" : "")">
-                        <a class="page-link" asp-page="/Jobs/Index" asp-route-page="@i" asp-route-status="@Model.StatusFilter">@i</a>
-                    </li>
-                }
-            </ul>
-        </nav>
-    }
+    @* FASE 2 — SEPARAR LISTAS POR ESTADO *@
+    <div class="fixhub-tech-sections">
+        @* 1) Oportunidades disponibles *@
+        <section class="fixhub-tech-section fixhub-tech-open mb-5">
+            <h3 class="fixhub-tech-section-title">
+                <span class="fixhub-tech-section-dot fixhub-dot-green"></span>
+                Oportunidades disponibles
+            </h3>
+            @if (Model.OpenJobs != null && Model.OpenJobs.Items.Count > 0)
+            {
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    @foreach (var job in Model.OpenJobs.Items)
+                    {
+                        <div class="col">
+                            <div class="fixhub-job-card fixhub-job-card-open">
+                                <div class="fixhub-job-card-body">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <h5 class="fixhub-job-card-title">@job.Title</h5>
+                                        <span class="badge fixhub-badge-open">@job.Status</span>
+                                    </div>
+                                    <p class="fixhub-job-card-meta mb-1">@job.CategoryName &nbsp;·&nbsp; @job.AddressText</p>
+                                    <p class="fixhub-job-card-desc">@(job.Description.Length > 120 ? job.Description.Substring(0, 120) + "…" : job.Description)</p>
+                                    <div class="fixhub-job-card-budget">
+                                        @if (job.BudgetMin.HasValue || job.BudgetMax.HasValue)
+                                        {
+                                            <span>$@(job.BudgetMin?.ToString("N0") ?? "?") — $@(job.BudgetMax?.ToString("N0") ?? "?")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="fixhub-text-muted">Sin presupuesto indicado</span>
+                                        }
+                                    </div>
+                                    <p class="fixhub-job-card-date">@job.CreatedAt.ToString("dd/MM/yyyy") · @job.CustomerName</p>
+                                </div>
+                                <div class="fixhub-job-card-footer">
+                                    <a asp-page="/Jobs/Detail" asp-route-id="@job.Id" class="btn btn-fixhub-primary btn-sm">Enviar propuesta</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="fixhub-empty-block">
+                    <p class="text-muted mb-0">No hay oportunidades abiertas en este momento.</p>
+                </div>
+            }
+        </section>
+
+        @* 2) Mis trabajos asignados *@
+        <section class="fixhub-tech-section fixhub-tech-assigned mb-5">
+            <h3 class="fixhub-tech-section-title">
+                <span class="fixhub-tech-section-dot fixhub-dot-blue"></span>
+                Mis trabajos asignados
+            </h3>
+            @if (Model.AssignedList.Count > 0)
+            {
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    @foreach (var a in Model.AssignedList)
+                    {
+                        <div class="col">
+                            <div class="fixhub-job-card fixhub-job-card-assigned">
+                                <div class="fixhub-job-card-body">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <h5 class="fixhub-job-card-title">@a.JobTitle</h5>
+                                        <span class="badge fixhub-badge-assigned">@IndexModel.StatusLabel(a.JobStatus)</span>
+                                    </div>
+                                    <p class="fixhub-job-card-meta mb-1">@a.CategoryName &nbsp;·&nbsp; @a.AddressText</p>
+                                    <div class="fixhub-job-card-budget">$@a.AcceptedPrice.ToString("N0")</div>
+                                    <p class="fixhub-job-card-date">Aceptado @a.AcceptedAt.ToString("dd/MM/yyyy") · @a.CustomerName</p>
+                                </div>
+                                <div class="fixhub-job-card-footer">
+                                    <a asp-page="/Jobs/Detail" asp-route-id="@a.JobId" class="btn btn-outline-primary btn-sm">Ver seguimiento</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="fixhub-empty-block">
+                    <p class="text-muted mb-0">Aún no tienes trabajos asignados. Envía propuestas en las oportunidades disponibles.</p>
+                    <a asp-page="/Jobs/Index" class="btn btn-fixhub-outline btn-sm mt-2">Ver oportunidades</a>
+                </div>
+            }
+        </section>
+
+        @* 3) Completados *@
+        <section class="fixhub-tech-section fixhub-tech-completed">
+            <h3 class="fixhub-tech-section-title fixhub-tech-section-title-muted">
+                <span class="fixhub-tech-section-dot fixhub-dot-gray"></span>
+                Completados
+            </h3>
+            @if (Model.CompletedList.Count > 0)
+            {
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    @foreach (var a in Model.CompletedList)
+                    {
+                        <div class="col">
+                            <div class="fixhub-job-card fixhub-job-card-completed">
+                                <div class="fixhub-job-card-body">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <h5 class="fixhub-job-card-title">@a.JobTitle</h5>
+                                        <span class="badge fixhub-badge-completed">Completado</span>
+                                    </div>
+                                    <p class="fixhub-job-card-meta mb-1">@a.CategoryName &nbsp;·&nbsp; @a.AddressText</p>
+                                    <div class="fixhub-job-card-budget fixhub-text-muted">$@a.AcceptedPrice.ToString("N0")</div>
+                                    <p class="fixhub-job-card-date">@(a.CompletedAt?.ToString("dd/MM/yyyy") ?? a.AcceptedAt.ToString("dd/MM/yyyy"))</p>
+                                </div>
+                                <div class="fixhub-job-card-footer">
+                                    <a asp-page="/Jobs/Detail" asp-route-id="@a.JobId" class="btn btn-outline-secondary btn-sm">Ver detalle</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="fixhub-empty-block fixhub-empty-block-muted">
+                    <p class="text-muted mb-0">No hay trabajos completados aún.</p>
+                </div>
+            }
+        </section>
+    </div>
 }
 else
 {
-    <div class="alert alert-light text-center py-5">
-        <p class="text-muted mb-0">No hay trabajos disponibles.</p>
+    @* Vista Cliente (sin cambios de lógica, mismo contenido) *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fixhub-section-title mb-0">Trabajos disponibles</h2>
         @if (Model.IsCustomer)
         {
-            <a asp-page="/Jobs/Create" class="btn btn-primary mt-3">Publica el primero</a>
+            <a asp-page="/Jobs/Create" class="btn btn-fixhub-primary">+ Publicar trabajo</a>
         }
     </div>
-}
 
-@functions {
-    static string StatusBadge(string status) => status switch
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-auto">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">Todos los estados</option>
+                <option value="1" selected="@(Model.StatusFilter == 1)">Abierto</option>
+                <option value="2" selected="@(Model.StatusFilter == 2)">Asignado</option>
+                <option value="3" selected="@(Model.StatusFilter == 3)">En progreso</option>
+                <option value="4" selected="@(Model.StatusFilter == 4)">Completado</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-sm btn-fixhub-outline">Filtrar</button>
+        </div>
+    </form>
+
+    @if (Model.Jobs is not null && Model.Jobs.Items.Count > 0)
     {
-        "Open" => "bg-success",
-        "Assigned" => "bg-primary",
-        "InProgress" => "bg-warning text-dark",
-        "Completed" => "bg-secondary",
-        _ => "bg-light text-dark"
-    };
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            @foreach (var job in Model.Jobs.Items)
+            {
+                <div class="col">
+                    <div class="fixhub-job-card">
+                        <div class="fixhub-job-card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <h5 class="fixhub-job-card-title">@job.Title</h5>
+                                <span class="badge @IndexModel.StatusBadge(job.Status)">@job.Status</span>
+                            </div>
+                            <p class="fixhub-job-card-meta mb-1"><strong>@job.CategoryName</strong> &nbsp;·&nbsp; @job.AddressText</p>
+                            <p class="fixhub-job-card-desc">@(job.Description.Length > 120 ? job.Description.Substring(0, 120) + "…" : job.Description)</p>
+                            @if (job.BudgetMin.HasValue || job.BudgetMax.HasValue)
+                            {
+                                <p class="fixhub-job-card-budget mb-1">$@(job.BudgetMin?.ToString("N0") ?? "?") — $@(job.BudgetMax?.ToString("N0") ?? "?")</p>
+                            }
+                            <p class="fixhub-job-card-date">Por: @job.CustomerName &nbsp;·&nbsp; @job.CreatedAt.ToString("dd/MM/yyyy")</p>
+                        </div>
+                        <div class="fixhub-job-card-footer">
+                            <a asp-page="/Jobs/Detail" asp-route-id="@job.Id" class="btn btn-sm btn-outline-primary">Ver detalle</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        @if (Model.Jobs.TotalPages > 1)
+        {
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    @for (int i = 1; i <= Model.Jobs.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.Jobs.Page ? "active" : "")">
+                            <a class="page-link" asp-page="/Jobs/Index" asp-route-page="@i" asp-route-status="@Model.StatusFilter">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="fixhub-empty-block">
+            <p class="text-muted mb-0">No hay trabajos disponibles.</p>
+            @if (Model.IsCustomer)
+            {
+                <a asp-page="/Jobs/Create" class="btn btn-fixhub-primary mt-3">Publica el primero</a>
+            }
+        </div>
+    }
 }
