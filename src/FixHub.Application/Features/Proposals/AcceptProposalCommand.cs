@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace FixHub.Application.Features.Proposals;
 
 // ─── Command ──────────────────────────────────────────────────────────────────
-public record AcceptProposalCommand(Guid ProposalId, Guid CustomerId)
+public record AcceptProposalCommand(Guid ProposalId, Guid AcceptedByUserId, bool AcceptAsAdmin = false)
     : IRequest<Result<AcceptProposalResponse>>;
 
 public record AcceptProposalResponse(
@@ -36,9 +36,9 @@ public class AcceptProposalCommandHandler(IApplicationDbContext db)
         if (proposal is null)
             return Result<AcceptProposalResponse>.Failure("Proposal not found.", "PROPOSAL_NOT_FOUND");
 
-        if (proposal.Job.CustomerId != req.CustomerId)
+        if (!req.AcceptAsAdmin && proposal.Job.CustomerId != req.AcceptedByUserId)
             return Result<AcceptProposalResponse>.Failure(
-                "Only the job owner can accept proposals.", "FORBIDDEN");
+                "Solo el dueño del trabajo o un administrador pueden aceptar propuestas.", "FORBIDDEN");
 
         if (proposal.Status != ProposalStatus.Pending)
             return Result<AcceptProposalResponse>.Failure(

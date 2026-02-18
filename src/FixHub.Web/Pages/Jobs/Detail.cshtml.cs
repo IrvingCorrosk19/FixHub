@@ -12,6 +12,8 @@ public class DetailModel(IFixHubApiClient apiClient) : PageModel
     public JobDto? Job { get; set; }
     public List<ProposalDto>? Proposals { get; set; }
     public Dictionary<Guid, TechnicianProfileDto> TechnicianProfiles { get; set; } = new();
+    /// <summary>Técnico asignado al trabajo (para mostrar al cliente cuando ya está asignado).</summary>
+    public TechnicianProfileDto? AssignedTechnicianProfile { get; set; }
     public string? ProposalError { get; set; }
     public bool AlreadyProposed { get; set; }
     public bool HasReview { get; set; }
@@ -19,8 +21,9 @@ public class DetailModel(IFixHubApiClient apiClient) : PageModel
 
     public bool IsCustomer => SessionUser.IsCustomer(User);
     public bool IsTechnician => SessionUser.IsTechnician(User);
+    public bool IsAdmin => SessionUser.GetRole(User) == "Admin";
     public bool IsOwner => Job?.CustomerId == SessionUser.GetUserId(User);
-    public bool CanSeeProposals => IsOwner || SessionUser.GetRole(User) == "Admin";
+    public bool CanSeeProposals => IsOwner || IsAdmin;
 
     [BindProperty]
     public ProposalInputModel ProposalInput { get; set; } = new();
@@ -116,13 +119,20 @@ public class DetailModel(IFixHubApiClient apiClient) : PageModel
                 var accepted = Proposals?.FirstOrDefault(p => p.Status == "Accepted");
                 AssignedTechnicianId = accepted?.TechnicianId;
                 HasReview = false;
+            }
 
-                foreach (var techId in Proposals?.Select(p => p.TechnicianId).Distinct() ?? [])
-                {
-                    var profileResult = await apiClient.GetTechnicianProfileAsync(techId);
-                    if (profileResult.IsSuccess && profileResult.Value != null)
-                        TechnicianProfiles[techId] = profileResult.Value;
-                }
+            if (AssignedTechnicianId.HasValue)
+            {
+                var profileResult = await apiClient.GetTechnicianProfileAsync(AssignedTechnicianId.Value);
+                if (profileResult.IsSuccess && profileResult.Value != null)
+                    AssignedTechnicianProfile = profileResult.Value;
+            }
+
+            foreach (var techId in Proposals?.Select(p => p.TechnicianId).Distinct() ?? [])
+            {
+                var profileResult = await apiClient.GetTechnicianProfileAsync(techId);
+                if (profileResult.IsSuccess && profileResult.Value != null)
+                    TechnicianProfiles[techId] = profileResult.Value;
             }
         }
         else if (IsTechnician)

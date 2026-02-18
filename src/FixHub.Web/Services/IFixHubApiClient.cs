@@ -31,6 +31,10 @@ public interface IFixHubApiClient
     // Technicians
     Task<ApiResult<TechnicianProfileDto>> GetTechnicianProfileAsync(Guid userId);
     Task<ApiResult<PagedResult<AssignmentDto>>> GetMyAssignmentsAsync(int page, int pageSize);
+
+    // Admin (postulantes)
+    Task<ApiResult<PagedResult<ApplicantDto>>> ListApplicantsAsync(int page, int pageSize, string? status = null);
+    Task<ApiResult<object>> UpdateTechnicianStatusAsync(Guid technicianId, int status);
 }
 
 public record HealthResponse(string Status, string Version, DateTime Timestamp);

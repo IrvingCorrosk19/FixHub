@@ -1,8 +1,11 @@
+using FixHub.Domain.Enums;
+
 namespace FixHub.Domain.Entities;
 
 public class TechnicianProfile
 {
     public Guid UserId { get; set; }
+    public TechnicianStatus Status { get; set; } = TechnicianStatus.Pending;
     public string? Bio { get; set; }
     public int ServiceRadiusKm { get; set; } = 10;
     public bool IsVerified { get; set; } = false;

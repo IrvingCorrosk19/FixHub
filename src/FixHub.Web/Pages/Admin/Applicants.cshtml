@@ -1,0 +1,75 @@
+@page
+@model FixHub.Web.Pages.Admin.ApplicantsModel
+@{
+    ViewData["Title"] = "Postulantes";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fixhub-section-title mb-0">Postulantes técnicos</h2>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+@if (Model.Applicants != null && Model.Applicants.Items.Count > 0)
+{
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Estado</th>
+                    <th>Postulación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model.Applicants.Items)
+                {
+                    <tr>
+                        <td class="fw-semibold">@a.FullName</td>
+                        <td>@a.Email</td>
+                        <td>@(a.Phone ?? "—")</td>
+                        <td><span class="badge @ApplicantsModel.StatusBadgeClass(a.Status)">@ApplicantsModel.StatusLabel(a.Status)</span></td>
+                        <td class="small text-muted">@a.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            @if (a.Status != "Approved" && a.Status != "Rejected")
+                            {
+                                <form method="post" asp-page-handler="Approve" asp-route-id="@a.UserId" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('¿Aprobar a @a.FullName?');">Aprobar</button>
+                                </form>
+                                <form method="post" asp-page-handler="Reject" asp-route-id="@a.UserId" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Rechazar a @a.FullName?');">Rechazar</button>
+                                </form>
+                                <form method="post" asp-page-handler="Interview" asp-route-id="@a.UserId" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Entrevista programada</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Applicants.TotalPages > 1)
+    {
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                @for (var i = 1; i <= Model.Applicants.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Applicants.Page ? "active" : "")">
+                        <a class="page-link" asp-page="/Admin/Applicants" asp-route-page="@i" asp-route-status="@Model.StatusFilter">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <p class="text-muted">No hay postulantes o no tienes permisos para ver esta lista.</p>
+}

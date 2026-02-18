@@ -16,9 +16,12 @@ public static class ResultExtensions
         int successStatusCode = 200)
     {
         if (result.IsSuccess)
-            return successStatusCode == 201
-                ? controller.StatusCode(201, result.Value)
-                : controller.Ok(result.Value);
+            return successStatusCode switch
+            {
+                201 => controller.StatusCode(201, result.Value),
+                204 => controller.NoContent(),
+                _ => controller.Ok(result.Value)
+            };
 
         return result.ErrorCode switch
         {
@@ -27,6 +30,7 @@ public static class ResultExtensions
             or "PROFILE_NOT_FOUND"
             or "USER_NOT_FOUND"
             or "CATEGORY_NOT_FOUND"
+            or "NOT_FOUND"
             or "NO_ASSIGNMENT"
             or "NO_PROPOSALS"
                 => controller.NotFound(ProblemFrom(result, 404)),

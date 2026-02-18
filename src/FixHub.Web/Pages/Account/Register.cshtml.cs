@@ -35,7 +35,11 @@ public class RegisterModel(IFixHubApiClient apiClient) : PageModel
         public int Role { get; set; } = 1;
     }
 
-    public void OnGet() { }
+    public void OnGet()
+    {
+        if (Request.Query["role"].FirstOrDefault() is { } r && int.TryParse(r, out var role) && (role == 1 || role == 2))
+            Input.Role = role;
+    }
 
     public async Task<IActionResult> OnPostAsync()
     {

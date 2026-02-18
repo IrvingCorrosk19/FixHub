@@ -25,11 +25,26 @@
                 </button>
                 <div class="collapse navbar-collapse" id="fixhubNav">
                     <ul class="navbar-nav me-auto align-items-lg-center">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-page="/Jobs/Index">Trabajos</a>
-                        </li>
+                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Customer"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Requests/My">Mis solicitudes</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Requests/New">Solicitar servicio</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Jobs/Index">Trabajos</a>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link" asp-page="/Index" asp-fragment="como-funciona">Cómo funciona</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-page="/Recruit/Apply">Trabaja con nosotros</a>
                         </li>
                     </ul>
                     <ul class="navbar-nav align-items-lg-center">
@@ -43,8 +58,12 @@
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                                     @if (User.IsInRole("Customer"))
                                     {
-                                        <li><a class="dropdown-item" asp-page="/Jobs/My">Mis trabajos</a></li>
-                                        <li><a class="dropdown-item" asp-page="/Jobs/Create">Publicar trabajo</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Requests/My">Mis solicitudes</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Requests/New">Solicitar servicio</a></li>
+                                    }
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a class="dropdown-item" asp-page="/Admin/Applicants">Postulantes</a></li>
                                     }
                                     @if (User.IsInRole("Technician"))
                                     {

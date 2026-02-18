@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace FixHub.Web.Pages.Jobs;
+namespace FixHub.Web.Pages.Requests;
 
 [Authorize]
-public class CreateModel(IFixHubApiClient apiClient) : PageModel
+public class NewModel(IFixHubApiClient apiClient) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -43,8 +43,8 @@ public class CreateModel(IFixHubApiClient apiClient) : PageModel
     {
         if (!SessionUser.IsCustomer(User))
         {
-            TempData["Error"] = "Solo los clientes pueden publicar trabajos. Inicia sesión con una cuenta de tipo Cliente o regístrate como Cliente.";
-            return RedirectToPage("/Jobs/Index");
+            TempData["Error"] = "Solo los clientes pueden solicitar servicios.";
+            return RedirectToPage("/Index");
         }
         return Page();
     }
@@ -53,8 +53,8 @@ public class CreateModel(IFixHubApiClient apiClient) : PageModel
     {
         if (!SessionUser.IsCustomer(User))
         {
-            TempData["Error"] = "Solo los clientes pueden publicar trabajos.";
-            return RedirectToPage("/Jobs/Index");
+            TempData["Error"] = "Solo los clientes pueden solicitar servicios.";
+            return RedirectToPage("/Index");
         }
         if (!ModelState.IsValid) return Page();
 
@@ -70,8 +70,8 @@ public class CreateModel(IFixHubApiClient apiClient) : PageModel
         if (!result.IsSuccess)
         {
             ErrorMessage = result.StatusCode == 403
-                ? "Solo los clientes pueden publicar trabajos. Tu cuenta es de técnico."
-                : (result.ErrorMessage ?? "Error al publicar el trabajo.");
+                ? "Solo los clientes pueden solicitar servicios."
+                : (result.ErrorMessage ?? "Error al enviar la solicitud.");
             return Page();
         }
 

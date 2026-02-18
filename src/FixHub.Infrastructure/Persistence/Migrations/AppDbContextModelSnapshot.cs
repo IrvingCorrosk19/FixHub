@@ -467,11 +467,19 @@ namespace FixHub.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(10)
                         .HasColumnName("service_radius_km");
 
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("status");
+
                     b.HasKey("UserId");
 
                     b.HasIndex("AvgRating");
 
                     b.HasIndex("IsVerified");
+
+                    b.HasIndex("Status");
 
                     b.ToTable("technician_profiles", (string)null);
                 });

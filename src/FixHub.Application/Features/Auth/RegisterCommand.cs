@@ -69,12 +69,13 @@ public class RegisterCommandHandler(
 
         db.Users.Add(user);
 
-        // Si es Technician, crear perfil vacío automáticamente
+        // Si es Technician, crear perfil con estado Pending (reclutamiento)
         if (request.Role == UserRole.Technician)
         {
             db.TechnicianProfiles.Add(new TechnicianProfile
             {
-                UserId = user.Id
+                UserId = user.Id,
+                Status = TechnicianStatus.Pending
             });
         }
 

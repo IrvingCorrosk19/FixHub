@@ -19,7 +19,8 @@ public record TechnicianProfileDto(
     bool IsVerified,
     decimal AvgRating,
     int CompletedJobs,
-    decimal CancelRate
+    decimal CancelRate,
+    string Status
 );
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -47,7 +48,8 @@ public class GetTechnicianProfileQueryHandler(IApplicationDbContext db)
             profile.IsVerified,
             profile.AvgRating,
             profile.CompletedJobs,
-            profile.CancelRate
+            profile.CancelRate,
+            profile.Status.ToString()
         ));
     }
 }

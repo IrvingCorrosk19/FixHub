@@ -296,6 +296,7 @@ body {
   font-size: 0.875rem;
   color: var(--fixhub-muted);
 }
+.fixhub-trust-alt { background: var(--fixhub-bg); }
 
 /* Category cards (FASE C) */
 .fixhub-categories {
@@ -351,6 +352,36 @@ body {
   font-weight: 600;
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
+}
+
+/* Category selection cards (Requests/New) */
+.fixhub-category-card {
+  display: block;
+  border: 2px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  padding: 1rem 0.75rem;
+  background: var(--fixhub-white);
+  cursor: pointer;
+  transition: border-color var(--fixhub-transition), background var(--fixhub-transition), box-shadow var(--fixhub-transition);
+}
+.fixhub-category-card:hover {
+  border-color: var(--fixhub-accent);
+  background: rgba(37, 99, 235, .04);
+}
+.fixhub-category-card-selected,
+.fixhub-category-card:has(input:checked) {
+  border-color: var(--fixhub-primary);
+  background: rgba(30, 58, 138, .08);
+  box-shadow: 0 0 0 1px var(--fixhub-primary);
+}
+.fixhub-category-icon {
+  font-size: 1.75rem;
+  margin-bottom: 0.35rem;
+}
+.fixhub-category-card span:last-child {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--fixhub-text);
 }
 
 /* Main content area (non-home pages) */
@@ -602,3 +633,123 @@ body {
 .fixhub-proposal-rep { font-size: 0.9rem; color: var(--fixhub-muted); }
 .fixhub-proposal-rep .fixhub-stars { margin-right: 0.25rem; }
 .badge-verified { background: rgba(22, 163, 74, .15); color: var(--fixhub-success); font-weight: 600; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CONFIANZA CLIENTE — Propuestas rediseñadas (FASE 1, 2, 4)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.fixhub-proposals-list { display: flex; flex-direction: column; gap: 1.25rem; }
+.fixhub-proposal-card-v2 {
+  background: var(--fixhub-white);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  transition: box-shadow var(--fixhub-transition), border-color var(--fixhub-transition);
+}
+.fixhub-proposal-card-v2:hover {
+  box-shadow: var(--fixhub-shadow-lg);
+  border-color: rgba(37, 99, 235, .25);
+}
+.fixhub-proposal-card-v2-body { padding: 1.5rem; }
+.fixhub-proposal-name-v2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+}
+.fixhub-proposal-rating-block {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.fixhub-proposal-rating-num {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+}
+.fixhub-proposal-trust-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--fixhub-muted);
+}
+.fixhub-proposal-trust-list li { margin-bottom: 0.2rem; }
+.fixhub-proposal-price-block {
+  text-align: right;
+  padding: 0.75rem 1rem;
+  background: rgba(22, 163, 74, .08);
+  border-radius: var(--fixhub-radius-btn);
+  border: 1px solid rgba(22, 163, 74, .2);
+}
+.fixhub-proposal-price-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--fixhub-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.fixhub-proposal-price-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--fixhub-success);
+}
+.fixhub-proposal-message {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--fixhub-border);
+}
+.fixhub-proposal-message-label {
+  font-size: 0.8rem;
+  color: var(--fixhub-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.fixhub-proposal-message-text {
+  font-size: 0.95rem;
+  color: var(--fixhub-text);
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  line-height: 1.5;
+}
+.fixhub-proposal-actions {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--fixhub-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Sección de protección (FASE 2) */
+.fixhub-trust-box {
+  background: rgba(30, 58, 138, .06);
+  border: 1px solid rgba(30, 58, 138, .12);
+  border-radius: var(--fixhub-radius);
+  padding: 1.5rem;
+}
+.fixhub-trust-box-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+  margin-bottom: 1rem;
+}
+.fixhub-trust-box-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--fixhub-text);
+}
+.fixhub-trust-box-icon { font-size: 1.25rem; }
+.fixhub-trust-box-text { font-weight: 500; }
+
+/* Comentarios recientes en perfil (FASE 3) */
+.fixhub-reviews-list { display: flex; flex-direction: column; gap: 1rem; }
+.fixhub-review-item {
+  padding: 1rem;
+  background: var(--fixhub-bg);
+  border-radius: var(--fixhub-radius-btn);
+  border: 1px solid var(--fixhub-border);
+}
+.fixhub-review-stars-num { font-size: 0.9rem; font-weight: 600; color: var(--fixhub-text); }
+.fixhub-review-comment { font-size: 0.9rem; color: var(--fixhub-text); line-height: 1.5; }
+.fixhub-reviews-empty { font-style: italic; }

@@ -1,0 +1,37 @@
+@page
+@model FixHub.Web.Pages.Recruit.ApplyModel
+@{
+    ViewData["Title"] = "Trabaja con nosotros";
+}
+
+<div class="fixhub-container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="fixhub-section-title mb-3">Postúlate para trabajar con FixHub</h1>
+            <p class="lead text-muted mb-4">
+                Somos una empresa de servicios técnicos con técnicos propios. Reclutamos mediante entrevista y verificación.
+            </p>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Requisitos del proceso</h5>
+                    <ul class="mb-0">
+                        <li>Datos personales y de contacto</li>
+                        <li>Especialidad y experiencia</li>
+                        <li>Entrevista presencial</li>
+                        <li>Verificación de identidad (cédula)</li>
+                        <li>Récord policivo</li>
+                        <li>Referencias laborales</li>
+                    </ul>
+                </div>
+            </div>
+
+            <p class="text-muted small mb-4">
+                Tu postulación será revisada por nuestro equipo. No se aprueba automáticamente; te contactaremos para los siguientes pasos.
+            </p>
+
+            <a asp-page="/Account/Register" asp-route-role="2" class="btn btn-fixhub-primary btn-lg">Crear cuenta y postularme</a>
+            <a asp-page="/Index" class="btn btn-outline-secondary btn-lg ms-2">Volver al inicio</a>
+        </div>
+    </div>
+</div>

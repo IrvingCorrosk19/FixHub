@@ -69,6 +69,17 @@ public class FixHubApiClient(HttpClient http) : IFixHubApiClient
     public Task<ApiResult<PagedResult<AssignmentDto>>> GetMyAssignmentsAsync(int page, int pageSize) =>
         GetAsync<PagedResult<AssignmentDto>>($"api/v1/technicians/me/assignments?page={page}&pageSize={pageSize}");
 
+    // ─── Admin ─────────────────────────────────────────────────────────────────
+    public Task<ApiResult<PagedResult<ApplicantDto>>> ListApplicantsAsync(int page, int pageSize, string? status = null)
+    {
+        var qs = $"api/v1/admin/applicants?page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrEmpty(status)) qs += $"&status={status}";
+        return GetAsync<PagedResult<ApplicantDto>>(qs);
+    }
+
+    public Task<ApiResult<object>> UpdateTechnicianStatusAsync(Guid technicianId, int status) =>
+        PatchAsync<object>($"api/v1/admin/technicians/{technicianId}/status", new { Status = status });
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
     private async Task<ApiResult<T>> GetAsync<T>(string url)
     {
@@ -89,6 +100,16 @@ public class FixHubApiClient(HttpClient http) : IFixHubApiClient
                 response = await http.PostAsync(url, null);
             else
                 response = await http.PostAsJsonAsync(url, body);
+            return await ParseResponseAsync<T>(response);
+        }
+        catch (Exception ex) { return ApiResult<T>.Failure($"Error de red: {ex.Message}", 0); }
+    }
+
+    private async Task<ApiResult<T>> PatchAsync<T>(string url, object body)
+    {
+        try
+        {
+            var response = await http.PatchAsJsonAsync(url, body);
             return await ParseResponseAsync<T>(response);
         }
         catch (Exception ex) { return ApiResult<T>.Failure($"Error de red: {ex.Message}", 0); }

@@ -40,9 +40,10 @@
                     <div class="mb-4">
                         <label asp-for="Input.Role" class="form-label">Tipo de cuenta</label>
                         <select asp-for="Input.Role" class="form-select">
-                            <option value="1">Cliente — Publicar trabajos</option>
-                            <option value="2">Técnico — Ofrecer servicios</option>
+                            <option value="1">Cliente — Solicitar servicios</option>
+                            <option value="2">Técnico — Postúlate para trabajar con FixHub</option>
                         </select>
+                        <div class="form-text">Si eres técnico, tu cuenta quedará en revisión hasta aprobación.</div>
                     </div>
                     <button type="submit" class="btn btn-success w-100">Crear cuenta</button>
                 </form>

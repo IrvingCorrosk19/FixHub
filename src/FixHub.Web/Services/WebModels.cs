@@ -108,7 +108,8 @@ public record TechnicianProfileDto(
     bool IsVerified,
     decimal AvgRating,
     int CompletedJobs,
-    decimal CancelRate);
+    decimal CancelRate,
+    string? Status = null);
 
 // ─── AI Scoring ───────────────────────────────────────────────────────────────
 
@@ -134,6 +135,16 @@ public record AssignmentDto(
     string JobStatus,
     DateTime AcceptedAt,
     DateTime? CompletedAt);
+
+// ─── Admin (postulantes técnicos) ─────────────────────────────────────────────
+
+public record ApplicantDto(
+    Guid UserId,
+    string FullName,
+    string Email,
+    string? Phone,
+    string Status,
+    DateTime CreatedAt);
 
 // ─── Errors ───────────────────────────────────────────────────────────────────
 

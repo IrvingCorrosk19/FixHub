@@ -68,6 +68,33 @@ else
                     {
                         <p class="mb-0 small"><strong>Tasa cancelación:</strong> @((p.CancelRate * 100).ToString("N1"))%</p>
                     }
+
+                    @* FASE 3 — Comentarios recientes *@
+                    <hr class="my-4" />
+                    <h6 class="fixhub-section-title mb-3">Comentarios de clientes</h6>
+                    @if (Model.RecentReviews != null && Model.RecentReviews.Count > 0)
+                    {
+                        <div class="fixhub-reviews-list">
+                            @foreach (var r in Model.RecentReviews.Take(3))
+                            {
+                                var starRating = (double)r.Stars;
+                                <div class="fixhub-review-item">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="fixhub-stars fixhub-stars-sm"><partial name="_Stars" model="@starRating" /></span>
+                                        <span class="fixhub-review-stars-num">@r.Stars</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(r.Comment))
+                                    {
+                                        <p class="fixhub-review-comment mb-0">@(r.Comment.Length > 120 ? r.Comment.Substring(0, 120) + "…" : r.Comment)</p>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="fixhub-reviews-empty fixhub-text-muted small mb-0">Las reseñas de clientes se mostrarán aquí cuando estén disponibles.</p>
+                    }
                 </div>
                 <div class="card-footer bg-transparent border-top">
                     <a asp-page="/Jobs/Index" class="btn btn-outline-secondary btn-sm">Volver</a>

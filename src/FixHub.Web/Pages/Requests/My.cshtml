@@ -1,0 +1,70 @@
+@page
+@model FixHub.Web.Pages.Requests.MyModel
+@{
+    ViewData["Title"] = "Mis solicitudes";
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <h2 class="fixhub-section-title mb-0">Mis solicitudes</h2>
+    <a asp-page="/Requests/New" class="btn btn-fixhub-primary">+ Solicitar servicio</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show">@Model.ErrorMessage<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>
+}
+
+@if (Model.Jobs is not null && Model.Jobs.Items.Count > 0)
+{
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var job in Model.Jobs.Items)
+        {
+            <div class="col">
+                <div class="fixhub-job-card">
+                    <div class="fixhub-job-card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <h5 class="fixhub-job-card-title">@job.Title</h5>
+                            <span class="badge @MyModel.StatusBadge(job.Status)">@MyModel.StatusLabel(job.Status)</span>
+                        </div>
+                        <p class="fixhub-job-card-meta mb-1"><strong>@job.CategoryName</strong> &nbsp;·&nbsp; @job.AddressText</p>
+                        <div class="fixhub-job-card-budget mb-1">
+                            @if (job.BudgetMin.HasValue || job.BudgetMax.HasValue)
+                            {
+                                <span>$@(job.BudgetMin?.ToString("N0") ?? "?") — $@(job.BudgetMax?.ToString("N0") ?? "?")</span>
+                            }
+                            else
+                            {
+                                <span class="fixhub-text-muted">Sin presupuesto indicado</span>
+                            }
+                        </div>
+                        <p class="fixhub-job-card-date text-muted small mb-0">@job.CreatedAt.ToString("dd/MM/yyyy")</p>
+                    </div>
+                    <div class="fixhub-job-card-footer">
+                        <a asp-page="/Jobs/Detail" asp-route-id="@job.Id" class="btn btn-sm btn-fixhub-primary">Ver detalle</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (Model.Jobs.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= Model.Jobs.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-page="/Requests/My" asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="fixhub-empty-block">
+        <p class="text-muted mb-0">Aún no has enviado ninguna solicitud.</p>
+        <a asp-page="/Requests/New" class="btn btn-fixhub-primary mt-3">Solicitar servicio</a>
+    </div>
+}

@@ -1,12 +1,12 @@
 @page
 @model FixHub.Web.Pages.Jobs.CreateModel
 @{
-    ViewData["Title"] = "Publicar trabajo";
+    ViewData["Title"] = "Solicitar servicio";
 }
 
 <div class="row justify-content-center">
     <div class="col-md-7">
-        <h2 class="mb-3">Publicar trabajo</h2>
+        <h2 class="mb-3">Solicitar servicio</h2>
 
         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
         {
@@ -56,7 +56,7 @@
                         </div>
                     </div>
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Publicar trabajo</button>
+                        <button type="submit" class="btn btn-primary">Enviar solicitud</button>
                         <a asp-page="/Jobs/Index" class="btn btn-outline-secondary">Cancelar</a>
                     </div>
                 </form>

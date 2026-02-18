@@ -1,4 +1,5 @@
 using FixHub.Domain.Entities;
+using FixHub.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,6 +13,11 @@ public class TechnicianProfileConfiguration : IEntityTypeConfiguration<Technicia
 
         builder.HasKey(tp => tp.UserId);
         builder.Property(tp => tp.UserId).HasColumnName("user_id");
+
+        builder.Property(tp => tp.Status)
+            .HasColumnName("status")
+            .HasDefaultValue(TechnicianStatus.Pending)
+            .HasConversion<int>();
 
         builder.Property(tp => tp.Bio)
             .HasColumnName("bio")
@@ -46,6 +52,7 @@ public class TechnicianProfileConfiguration : IEntityTypeConfiguration<Technicia
         // Indexes
         builder.HasIndex(tp => tp.IsVerified);
         builder.HasIndex(tp => tp.AvgRating);
+        builder.HasIndex(tp => tp.Status);
 
         // Relations with ScoreSnapshots
         builder.HasMany(tp => tp.ScoreSnapshots)
