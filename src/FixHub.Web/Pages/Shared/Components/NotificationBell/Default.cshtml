@@ -1,0 +1,49 @@
+@model FixHub.Web.ViewComponents.NotificationBellViewModel
+@{
+    var unread = Model.UnreadCount;
+    var items = Model.RecentNotifications;
+}
+<li class="nav-item dropdown">
+    <a class="nav-link position-relative" href="#" id="notificationBell" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notificaciones">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        @if (unread > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">@(unread > 99 ? "99+" : unread)</span>
+        }
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationBell" style="min-width: 320px; max-height: 400px; overflow-y: auto;">
+        <li class="dropdown-header d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+            <span class="fw-semibold">Notificaciones</span>
+            <a asp-page="/Notifications/Index" class="btn btn-sm btn-link text-decoration-none p-0">Ver todas</a>
+        </li>
+        @if (items.Count == 0)
+        {
+            <li><span class="dropdown-item text-muted py-3">No hay notificaciones</span></li>
+        }
+        else
+        {
+            @foreach (var n in items)
+            {
+                <li>
+                    @if (n.JobId.HasValue)
+                    {
+                        <a class="dropdown-item @(n.IsRead ? "" : "bg-light") py-2 px-3" asp-page="/Jobs/Detail" asp-route-id="@n.JobId">
+                            <span class="d-block small text-truncate">@n.Message</span>
+                            <span class="d-block small text-muted">@n.CreatedAt.ToLocalTime().ToString("g")</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="dropdown-item @(n.IsRead ? "" : "bg-light") py-2 px-3" asp-page="/Notifications/Index" asp-route-markRead="@n.Id">
+                            <span class="d-block small text-truncate">@n.Message</span>
+                            <span class="d-block small text-muted">@n.CreatedAt.ToLocalTime().ToString("g")</span>
+                        </a>
+                    }
+                </li>
+            }
+        }
+    </ul>
+</li>

@@ -1,5 +1,6 @@
 using FixHub.Application.Common.Interfaces;
 using FixHub.Infrastructure.Persistence;
+using Microsoft.Extensions.Caching.Memory;
 using FixHub.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,6 +29,15 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IEmailSender, SendGridEmailSender>();
+        services.AddScoped<IEmailOutboxService, EmailOutboxService>();
+        services.AddScoped<INotificationEmailComposer, NotificationEmailComposer>();
+        services.AddScoped<IDatabaseHealthChecker, DatabaseHealthChecker>();
+        services.AddHostedService<OutboxEmailSenderHostedService>();
+        services.AddHostedService<JobSlaMonitor>();
+        services.AddMemoryCache();
+        services.AddSingleton<IDashboardCacheInvalidator, DashboardCacheInvalidator>();
 
         return services;
     }

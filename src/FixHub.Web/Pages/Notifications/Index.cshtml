@@ -1,0 +1,60 @@
+@page
+@model FixHub.Web.Pages.Notifications.IndexModel
+@{
+    ViewData["Title"] = "Notificaciones";
+}
+
+<div class="fixhub-container py-4">
+    <h1 class="h3 mb-4">Notificaciones</h1>
+
+    @if (Model.Notifications.Items.Count == 0)
+    {
+        <p class="text-muted">No tienes notificaciones.</p>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var n in Model.Notifications.Items)
+            {
+                var hasJob = n.JobId.HasValue;
+                var jobDetailUrl = hasJob ? Url.Page("/Jobs/Detail", null, new { id = n.JobId }) : null;
+                var href = hasJob
+                    ? Url.Page("/Notifications/Index", null, new { markRead = n.Id, redirect = jobDetailUrl })
+                    : Url.Page("/Notifications/Index", null, new { markRead = n.Id });
+                <a href="@href" class="list-group-item list-group-item-action @(n.IsRead ? "" : "list-group-item-light") d-flex justify-content-between align-items-start">
+                    <div class="ms-2 me-auto">
+                        <div class="fw-medium">@n.Message</div>
+                        <small class="text-muted">@n.Type · @n.CreatedAt.ToLocalTime().ToString("g")</small>
+                    </div>
+                    @if (!n.IsRead)
+                    {
+                        <span class="badge bg-primary rounded-pill">Nueva</span>
+                    }
+                </a>
+            }
+        </div>
+
+        @if (Model.Notifications.TotalPages > 1)
+        {
+            <nav class="mt-3" aria-label="Paginación de notificaciones">
+                <ul class="pagination justify-content-center">
+                    @if (Model.Notifications.HasPreviousPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-page="/Notifications/Index" asp-route-page="@(Model.Notifications.Page - 1)">Anterior</a>
+                        </li>
+                    }
+                    <li class="page-item disabled">
+                        <span class="page-link">@Model.Notifications.Page de @Model.Notifications.TotalPages</span>
+                    </li>
+                    @if (Model.Notifications.HasNextPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-page="/Notifications/Index" asp-route-page="@(Model.Notifications.Page + 1)">Siguiente</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>

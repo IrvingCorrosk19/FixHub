@@ -1,5 +1,6 @@
 using FixHub.Application.Common.Interfaces;
 using FixHub.Application.Common.Models;
+using FixHub.Application.Features.Admin;
 using FixHub.Application.Features.Auth;
 using FixHub.Application.Features.Jobs;
 using FixHub.Application.Features.Proposals;
@@ -52,13 +53,25 @@ public sealed class AuditBehavior<TRequest, TResponse>(
                 => (cmd.TechnicianId, "PROPOSAL_SUBMIT", "Proposal", r.Value.Id, new { jobId = cmd.JobId }),
 
             (AcceptProposalCommand cmd, Result<AcceptProposalResponse> r) when r.IsSuccess && r.Value != null
-                => (cmd.CustomerId, "PROPOSAL_ACCEPT", "Proposal", r.Value.ProposalId, new { jobId = r.Value.JobId }),
+                => (cmd.AcceptedByUserId, "PROPOSAL_ACCEPT", "Proposal", r.Value.ProposalId, new { jobId = r.Value.JobId }),
 
-            (CompleteJobCommand cmd, Result<JobDto> r) when r.IsSuccess
-                => (cmd.CustomerId, "JOB_COMPLETE", "Job", cmd.JobId, null),
+            (CompleteJobCommand cmd, Result<JobDto> r) when r.IsSuccess && r.Value != null
+                => (cmd.CustomerId, "JOB_COMPLETE", "Job", cmd.JobId, new { jobId = cmd.JobId, statusAfter = r.Value.Status }),
 
             (CreateReviewCommand cmd, Result<ReviewDto> r) when r.IsSuccess && r.Value != null
                 => (cmd.CustomerId, "REVIEW_CREATE", "Review", r.Value.Id, new { jobId = cmd.JobId }),
+
+            (CancelJobCommand cmd, Result<JobDto> r) when r.IsSuccess
+                => (cmd.CustomerId, "JOB_CANCEL", "Job", cmd.JobId, new { jobId = cmd.JobId, statusAfter = "Cancelled" }),
+
+            (ReportJobIssueCommand cmd, Result<IssueDto> r) when r.IsSuccess && r.Value != null
+                => (cmd.ReportedByUserId, "JOB_ISSUE_REPORT", "JobIssue", r.Value.Id, new { jobId = cmd.JobId, issueId = r.Value.Id, reason = cmd.Reason }),
+
+            (StartJobCommand cmd, Result<JobDto> r) when r.IsSuccess
+                => (cmd.AdminUserId, "JOB_START", "Job", cmd.JobId, new { jobId = cmd.JobId, statusAfter = "InProgress" }),
+
+            (AdminUpdateJobStatusCommand cmd, Result<JobDto> r) when r.IsSuccess && r.Value != null
+                => (cmd.AdminUserId, "JOB_ADMIN_UPDATE_STATUS", "Job", cmd.JobId, new { jobId = cmd.JobId, statusAfter = r.Value.Status }),
 
             _ => (null, null, null, null, null)
         };

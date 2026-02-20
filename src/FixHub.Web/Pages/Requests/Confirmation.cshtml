@@ -1,0 +1,40 @@
+@page "{id:guid}"
+@model FixHub.Web.Pages.Requests.ConfirmationModel
+@{
+    ViewData["Title"] = "Solicitud recibida";
+}
+
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-lg-6 col-md-8 text-center">
+
+        <span class="fixhub-confirm-icon mb-3">✅</span>
+
+        <h2 class="fixhub-section-title mb-2">¡Solicitud recibida!</h2>
+        <p class="text-muted mb-4">
+            Estamos asignando un técnico verificado para tu solicitud.<br>
+            <strong>Tiempo estimado: 15 minutos.</strong>
+        </p>
+
+        <div class="fixhub-trust-box text-start mb-4">
+            <h6 class="fixhub-trust-box-title">¿Qué pasa ahora?</h6>
+            <ul class="fixhub-confirm-steps">
+                <li>✔ &nbsp;FixHub selecciona un técnico verificado para tu caso</li>
+                <li>✔ &nbsp;El técnico se comunicará contigo directamente</li>
+                <li>✔ &nbsp;Puedes ver el estado en tiempo real en "Ver mi solicitud"</li>
+            </ul>
+        </div>
+
+        <p class="text-muted small mb-4">
+            ¿Tienes preguntas? Escríbenos a
+            <a href="mailto:soporte@fixhub.com">soporte@fixhub.com</a>
+        </p>
+
+        <div class="d-flex gap-2 justify-content-center flex-wrap">
+            <a asp-page="/Jobs/Detail" asp-route-id="@Model.JobId"
+               class="btn btn-fixhub-primary btn-lg">Ver mi solicitud</a>
+            <a asp-page="/Requests/My"
+               class="btn btn-fixhub-outline btn-lg">Mis solicitudes</a>
+        </div>
+
+    </div>
+</div>

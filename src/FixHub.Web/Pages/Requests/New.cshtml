@@ -14,59 +14,59 @@
             <div class="alert alert-danger alert-dismissible fade show">@Model.ErrorMessage<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>
         }
 
-        @* Cards de categorías *@
-        <div class="mb-4">
-            <label class="form-label">Categoría</label>
-            <div class="row g-2 g-md-3">
-                <div class="col-6 col-md-4">
-                    <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 1 ? "fixhub-category-card-selected" : "")">
-                        <input type="radio" asp-for="Input.CategoryId" value="1" class="d-none" />
-                        <span class="d-block fixhub-category-icon">🔧</span>
-                        <span>Plomería</span>
-                    </label>
-                </div>
-                <div class="col-6 col-md-4">
-                    <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 2 ? "fixhub-category-card-selected" : "")">
-                        <input type="radio" asp-for="Input.CategoryId" value="2" class="d-none" />
-                        <span class="d-block fixhub-category-icon">⚡</span>
-                        <span>Electricidad</span>
-                    </label>
-                </div>
-                <div class="col-6 col-md-4">
-                    <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 4 ? "fixhub-category-card-selected" : "")">
-                        <input type="radio" asp-for="Input.CategoryId" value="4" class="d-none" />
-                        <span class="d-block fixhub-category-icon">❄️</span>
-                        <span>Aire Acondicionado</span>
-                    </label>
-                </div>
-                <div class="col-6 col-md-4">
-                    <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 5 ? "fixhub-category-card-selected" : "")">
-                        <input type="radio" asp-for="Input.CategoryId" value="5" class="d-none" />
-                        <span class="d-block fixhub-category-icon">🖌️</span>
-                        <span>Pintura</span>
-                    </label>
-                </div>
-                <div class="col-6 col-md-4">
-                    <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 3 ? "fixhub-category-card-selected" : "")">
-                        <input type="radio" asp-for="Input.CategoryId" value="3" class="d-none" />
-                        <span class="d-block fixhub-category-icon">🛠️</span>
-                        <span>Handyman</span>
-                    </label>
-                </div>
-                <div class="col-6 col-md-4">
-                    <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 6 ? "fixhub-category-card-selected" : "")">
-                        <input type="radio" asp-for="Input.CategoryId" value="6" class="d-none" />
-                        <span class="d-block fixhub-category-icon">🔐</span>
-                        <span>Cerrajería</span>
-                    </label>
-                </div>
-            </div>
-            <span asp-validation-for="Input.CategoryId" class="text-danger small"></span>
-        </div>
-
         <div class="card shadow-sm">
             <div class="card-body">
                 <form method="post">
+                    @* Cards de categorías (dentro del form para que Input.CategoryId se envíe) *@
+                    <div class="mb-4">
+                        <label class="form-label">Categoría</label>
+                        <div class="row g-2 g-md-3">
+                            <div class="col-6 col-md-4">
+                                <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 1 ? "fixhub-category-card-selected" : "")">
+                                    <input type="radio" asp-for="Input.CategoryId" value="1" class="d-none" />
+                                    <span class="d-block fixhub-category-icon">🔧</span>
+                                    <span>Plomería</span>
+                                </label>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 2 ? "fixhub-category-card-selected" : "")">
+                                    <input type="radio" asp-for="Input.CategoryId" value="2" class="d-none" />
+                                    <span class="d-block fixhub-category-icon">⚡</span>
+                                    <span>Electricidad</span>
+                                </label>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 4 ? "fixhub-category-card-selected" : "")">
+                                    <input type="radio" asp-for="Input.CategoryId" value="4" class="d-none" />
+                                    <span class="d-block fixhub-category-icon">❄️</span>
+                                    <span>Aire Acondicionado</span>
+                                </label>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 5 ? "fixhub-category-card-selected" : "")">
+                                    <input type="radio" asp-for="Input.CategoryId" value="5" class="d-none" />
+                                    <span class="d-block fixhub-category-icon">🖌️</span>
+                                    <span>Pintura</span>
+                                </label>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 3 ? "fixhub-category-card-selected" : "")">
+                                    <input type="radio" asp-for="Input.CategoryId" value="3" class="d-none" />
+                                    <span class="d-block fixhub-category-icon">🛠️</span>
+                                    <span>Handyman</span>
+                                </label>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="fixhub-category-card w-100 text-center @(Model.Input.CategoryId == 6 ? "fixhub-category-card-selected" : "")">
+                                    <input type="radio" asp-for="Input.CategoryId" value="6" class="d-none" />
+                                    <span class="d-block fixhub-category-icon">🔐</span>
+                                    <span>Cerrajería</span>
+                                </label>
+                            </div>
+                        </div>
+                        <span asp-validation-for="Input.CategoryId" class="text-danger small"></span>
+                    </div>
+
                     <div class="mb-3">
                         <label asp-for="Input.Title" class="form-label">Título</label>
                         <input asp-for="Input.Title" class="form-control" placeholder="Ej. Fuga de agua en cocina" />
@@ -83,17 +83,7 @@
                         <input asp-for="Input.AddressText" class="form-control" placeholder="Calle, ciudad, referencias..." />
                         <span asp-validation-for="Input.AddressText" class="text-danger"></span>
                     </div>
-                    <div class="row g-2 mb-4">
-                        <div class="col-md-6">
-                            <label asp-for="Input.BudgetMin" class="form-label">Presupuesto mínimo ($)</label>
-                            <input asp-for="Input.BudgetMin" class="form-control" type="number" step="0.01" min="0" placeholder="50" />
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="Input.BudgetMax" class="form-label">Presupuesto máximo ($)</label>
-                            <input asp-for="Input.BudgetMax" class="form-control" type="number" step="0.01" min="0" placeholder="200" />
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2 flex-wrap">
+                    <div class="d-flex gap-2 flex-wrap mt-2">
                         <button type="submit" class="btn btn-fixhub-primary btn-lg">Enviar solicitud</button>
                         <a asp-page="/Requests/My" class="btn btn-outline-secondary">Cancelar</a>
                     </div>
@@ -111,7 +101,10 @@
                 document.querySelectorAll('.fixhub-category-card').forEach(function(c) { c.classList.remove('fixhub-category-card-selected'); });
                 this.classList.add('fixhub-category-card-selected');
                 var radio = this.querySelector('input[type="radio"]');
-                if (radio) radio.checked = true;
+                if (radio) {
+                    radio.checked = true;
+                    if (typeof radio.dispatchEvent === 'function') radio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             });
         });
     </script>

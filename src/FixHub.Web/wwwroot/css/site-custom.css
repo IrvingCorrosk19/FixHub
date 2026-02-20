@@ -753,3 +753,992 @@ body {
 .fixhub-review-stars-num { font-size: 0.9rem; font-weight: 600; color: var(--fixhub-text); }
 .fixhub-review-comment { font-size: 0.9rem; color: var(--fixhub-text); line-height: 1.5; }
 .fixhub-reviews-empty { font-style: italic; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BADGES SEMÁNTICOS DE ESTADO (cliente-facing, en español)
+   Reemplazan bg-success/bg-warning de Bootstrap con colores con significado real
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.fixhub-badge-pending    { background: #D97706; color: #fff; } /* ámbar — en espera */
+.fixhub-badge-assigned   { background: var(--fixhub-accent); color: #fff; } /* azul */
+.fixhub-badge-inprogress { background: #D97706; color: #fff; } /* ámbar — en curso */
+.fixhub-badge-completed  { background: var(--fixhub-success); color: #fff; } /* verde — éxito */
+.fixhub-badge-cancelled  { background: #DC2626; color: #fff; } /* rojo */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STEPPER VISUAL DE ESTADO (Jobs/Detail — vista cliente)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.fixhub-stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-bottom: 0.5rem;
+}
+.fixhub-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.fixhub-step-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 2px solid var(--fixhub-border);
+  background: var(--fixhub-white);
+  color: var(--fixhub-muted);
+  flex-shrink: 0;
+  transition: background var(--fixhub-transition), border-color var(--fixhub-transition);
+}
+.fixhub-step-label {
+  font-size: 0.72rem;
+  color: var(--fixhub-muted);
+  margin-top: 0.4rem;
+  text-align: center;
+  line-height: 1.3;
+  padding: 0 0.15rem;
+}
+.fixhub-step-done .fixhub-step-circle {
+  background: var(--fixhub-success);
+  border-color: var(--fixhub-success);
+  color: #fff;
+}
+.fixhub-step-done .fixhub-step-label { color: var(--fixhub-success); }
+.fixhub-step-active .fixhub-step-circle {
+  background: var(--fixhub-accent);
+  border-color: var(--fixhub-accent);
+  color: #fff;
+}
+.fixhub-step-active .fixhub-step-label {
+  color: var(--fixhub-accent);
+  font-weight: 600;
+}
+.fixhub-step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--fixhub-border);
+  margin-top: 16px; /* alinea con el centro del círculo */
+  align-self: flex-start;
+  transition: background var(--fixhub-transition);
+}
+.fixhub-step-line-done { background: var(--fixhub-success); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TÉCNICO ASIGNADO — Hero card (arriba del pliegue)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.fixhub-assigned-hero {
+  background: var(--fixhub-white);
+  border: 1px solid var(--fixhub-border);
+  border-left: 4px solid var(--fixhub-success);
+  border-radius: var(--fixhub-radius);
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  box-shadow: var(--fixhub-shadow);
+}
+.fixhub-assigned-hero-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.fixhub-assigned-avatar { font-size: 3rem; line-height: 1; }
+.fixhub-assigned-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+  margin-bottom: 0.25rem;
+}
+.fixhub-assigned-meta { flex-shrink: 0; }
+.fixhub-eta-label {
+  font-size: 0.72rem;
+  color: var(--fixhub-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.fixhub-eta-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--fixhub-text);
+  margin-top: 0.15rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CTA DE RESEÑA (post-completado)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.fixhub-review-cta {
+  background: rgba(251, 191, 36, .12);
+  border: 1px solid rgba(251, 191, 36, .45);
+  border-radius: var(--fixhub-radius);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BARRA DE SOPORTE (siempre visible para cliente/dueño)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.fixhub-support-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  background: var(--fixhub-bg);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  font-size: 0.9rem;
+  color: var(--fixhub-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PANTALLA DE CONFIRMACIÓN POST-SOLICITUD (Requests/Confirmation)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.fixhub-confirm-icon { font-size: 4rem; line-height: 1; display: block; }
+.fixhub-confirm-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--fixhub-text);
+}
+.fixhub-confirm-steps li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--fixhub-border);
+}
+.fixhub-confirm-steps li:last-child { border-bottom: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TOAST SYSTEM — Notificaciones elegantes (FASE 4)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.fixhub-toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 1090;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 380px;
+  pointer-events: none;
+}
+.fixhub-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--fixhub-radius);
+  box-shadow: 0 8px 32px -4px rgba(0,0,0,.18);
+  background: var(--fixhub-white);
+  border-left: 4px solid var(--fixhub-border);
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--fixhub-text);
+  pointer-events: all;
+  opacity: 0;
+  transform: translateX(24px);
+  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(.16,.84,.44,1);
+}
+.fixhub-toast-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.fixhub-toast-success { border-left-color: var(--fixhub-success); }
+.fixhub-toast-error   { border-left-color: #DC2626; }
+.fixhub-toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+.fixhub-toast-msg  { flex: 1; }
+.fixhub-toast-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--fixhub-muted);
+  cursor: pointer;
+  padding: 0 0.15rem;
+  line-height: 1;
+  transition: color var(--fixhub-transition);
+}
+.fixhub-toast-close:hover { color: var(--fixhub-text); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MICRO-INTERACCIONES Y ANIMACIONES (FASE 4)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Animación de entrada para elementos de la página (stepper, hero, CTA) */
+@keyframes fixhub-slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fixhub-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes fixhub-step-pop {
+  0%   { transform: scale(0.7); opacity: 0; }
+  60%  { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.fixhub-animate-in {
+  animation: fixhub-slide-up 0.4s cubic-bezier(.16,.84,.44,1) both;
+}
+.fixhub-step-enter {
+  animation: fixhub-step-pop 0.35s cubic-bezier(.16,.84,.44,1) both;
+}
+
+/* Pulso verde — indicador "en vivo" junto al timestamp */
+.fixhub-pulse-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fixhub-success);
+  vertical-align: middle;
+  animation: fixhub-pulse 2s ease-in-out infinite;
+}
+@keyframes fixhub-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .5; transform: scale(1.4); }
+}
+
+/* Línea "actualizado hace X" */
+.fixhub-updated-ago {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+
+/* Tiempo del paso en el stepper */
+.fixhub-step-time {
+  font-size: 0.68rem;
+  color: var(--fixhub-muted);
+  margin-top: 0.2rem;
+  text-align: center;
+}
+
+/* ETA estimate bajo el estado del técnico */
+.fixhub-eta-estimate {
+  font-size: 0.82rem;
+  color: var(--fixhub-muted);
+}
+
+/* Link de teléfono clickable */
+.fixhub-phone-link {
+  color: var(--fixhub-accent);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--fixhub-transition);
+}
+.fixhub-phone-link:hover { color: var(--fixhub-primary); text-decoration: underline; }
+
+/* Card de detalles del job */
+.fixhub-detail-title { font-size: 1.4rem; font-weight: 700; color: var(--fixhub-text); }
+.fixhub-detail-desc  { color: var(--fixhub-text); line-height: 1.65; }
+.fixhub-status-badge { font-size: 0.85rem !important; }
+
+/* Footer de la card de detalles */
+.fixhub-detail-footer {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 1rem 1.25rem;
+}
+
+/* Trust box con spinner de espera */
+.fixhub-trust-box-waiting { border-color: rgba(217, 119, 6, .25); background: rgba(217, 119, 6, .06); }
+.fixhub-spinner-icon { font-size: 1.5rem; flex-shrink: 0; animation: fixhub-spin 3s linear infinite; }
+
+/* Info de técnico — layout */
+.fixhub-assigned-info { min-width: 0; }
+
+/* Hover elevado en cards ya definidas (refuerzo) */
+.fixhub-job-card:hover,
+.fixhub-kpi-card:hover,
+.fixhub-proposal-card-v2:hover {
+  box-shadow: var(--fixhub-shadow-lg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MOBILE-FIRST OPTIMIZATIONS (FASE 5)
+   Breakpoint principal: < 768px
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Helper global: botón full-width en mobile */
+.fixhub-btn-w100-mobile { /* se aplica via @media abajo */ }
+
+@media (max-width: 767.98px) {
+
+  /* Botones full-width en mobile */
+  .fixhub-btn-w100-mobile {
+    width: 100%;
+    text-align: center;
+    display: block;
+  }
+
+  /* ── Stepper vertical en mobile ── */
+  .fixhub-stepper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: 0.5rem 0;
+  }
+  .fixhub-step {
+    flex-direction: row;
+    align-items: flex-start;
+    flex: none;
+    width: 100%;
+    gap: 1rem;
+    padding: 0.35rem 0;
+  }
+  .fixhub-step-circle {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+  }
+  .fixhub-step-label {
+    font-size: 0.85rem;
+    margin-top: 0.35rem;
+    text-align: left;
+    font-weight: 500;
+  }
+  .fixhub-step-time {
+    font-size: 0.72rem;
+    margin-top: 0.1rem;
+    text-align: left;
+  }
+  /* Línea vertical entre pasos */
+  .fixhub-step-line {
+    width: 2px;
+    height: 20px;
+    margin: 0 0 0 14px;   /* centrada bajo el círculo (30px/2 - 1px) */
+    align-self: auto;
+    margin-top: 0;
+  }
+
+  /* ── Técnico asignado — stack vertical ── */
+  .fixhub-assigned-hero {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .fixhub-assigned-meta {
+    text-align: left;
+    width: 100%;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--fixhub-border);
+  }
+
+  /* ── Cards de detalles ── */
+  .fixhub-detail-footer {
+    flex-direction: column;
+  }
+  .fixhub-detail-footer .btn {
+    width: 100%;
+  }
+
+  /* ── KPI cards — 2 columnas en mobile ── */
+  .fixhub-kpi-card {
+    padding: 1rem;
+  }
+  .fixhub-kpi-value { font-size: 1.5rem; }
+
+  /* ── CTA reseña — stack vertical ── */
+  .fixhub-review-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* ── Barra de soporte — stack ── */
+  .fixhub-support-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .fixhub-support-bar .btn { width: 100%; }
+
+  /* ── Toast — full width en mobile ── */
+  .fixhub-toast-container {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    max-width: 100%;
+    padding: 0.75rem;
+    border-radius: 0;
+  }
+  .fixhub-toast {
+    border-radius: var(--fixhub-radius);
+    transform: translateY(24px);
+  }
+  .fixhub-toast-visible { transform: translateY(0); }
+
+  /* ── Legibilidad móvil ── */
+  .fixhub-section-title    { font-size: 1.35rem; }
+  .fixhub-assigned-name    { font-size: 1.15rem; }
+  .fixhub-detail-title     { font-size: 1.2rem; }
+  .fixhub-job-card-title   { font-size: 1rem; }
+  .fixhub-kpi-label        { font-size: 0.75rem; }
+
+  /* ── Padding vertical extra en main ── */
+  .fixhub-main main { padding-top: 1.25rem; }
+
+  /* ── Formulario de solicitud — más espacio vertical ── */
+  .fixhub-category-card { padding: 0.85rem 0.5rem; }
+  .fixhub-category-icon { font-size: 1.5rem; }
+
+  /* ── Propuestas — forzar stack en layout ── */
+  .fixhub-proposal-card-v2-body .d-flex { flex-direction: column; }
+  .fixhub-proposal-price-block { text-align: left; margin-top: 0.75rem; }
+
+  /* ── Paginación más pequeña ── */
+  .pagination { font-size: 0.875rem; }
+  .page-link  { padding: 0.35rem 0.6rem; }
+
+  /* ── Timeline — stack mobile ── */
+  .fixhub-timeline-list { padding-left: 1.25rem; }
+  .fixhub-support-block .d-flex { flex-direction: column; }
+  .fixhub-support-block .btn { width: 100%; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FASE 6 — HISTORIAL, SOPORTE Y CANCELACIONES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Timeline de historial de eventos ── */
+.fixhub-timeline { }
+.fixhub-timeline-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+  margin-bottom: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.78rem;
+  color: var(--fixhub-muted);
+}
+.fixhub-timeline-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  padding-left: 0.5rem;
+}
+.fixhub-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.55rem 0;
+  position: relative;
+}
+/* Línea vertical continua entre ítems */
+.fixhub-timeline-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 6px;          /* center of 14px dot */
+  top: 22px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--fixhub-border);
+}
+.fixhub-timeline-item.fixhub-timeline-done:not(:last-child)::after {
+  background: var(--fixhub-success);
+}
+.fixhub-timeline-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--fixhub-border);
+  background: var(--fixhub-white);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.fixhub-timeline-done .fixhub-timeline-dot {
+  background: var(--fixhub-success);
+  border-color: var(--fixhub-success);
+}
+.fixhub-timeline-pending .fixhub-timeline-dot {
+  background: var(--fixhub-white);
+  border-color: var(--fixhub-border);
+}
+.fixhub-timeline-cancelled .fixhub-timeline-dot {
+  background: #DC2626;
+  border-color: #DC2626;
+}
+.fixhub-timeline-dot-success {
+  background: var(--fixhub-success) !important;
+  border-color: var(--fixhub-success) !important;
+}
+.fixhub-timeline-dot-danger {
+  background: #DC2626 !important;
+  border-color: #DC2626 !important;
+}
+.fixhub-timeline-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.fixhub-timeline-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--fixhub-text);
+  line-height: 1.3;
+}
+.fixhub-timeline-pending .fixhub-timeline-label {
+  color: var(--fixhub-muted);
+  font-weight: 400;
+}
+.fixhub-timeline-time {
+  font-size: 0.75rem;
+  color: var(--fixhub-muted);
+  margin-top: 0.1rem;
+}
+.fixhub-timeline-sub {
+  font-size: 0.78rem;
+  color: var(--fixhub-muted);
+  margin-top: 0.1rem;
+}
+
+/* ── Bloque de soporte expandido (con email + teléfono) ── */
+.fixhub-support-block {
+  background: var(--fixhub-bg);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  padding: 1.25rem 1.5rem;
+}
+.fixhub-support-block-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+.fixhub-support-icon { font-size: 1.25rem; }
+.fixhub-support-block-text {
+  font-size: 0.88rem;
+  color: var(--fixhub-muted);
+  margin-bottom: 0.85rem;
+}
+
+/* ── Opciones de radio en modal de reporte ── */
+.fixhub-radio-option {
+  display: flex;
+  align-items: center;
+  font-size: 0.92rem;
+  color: var(--fixhub-text);
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius-btn);
+  cursor: pointer;
+  transition: background var(--fixhub-transition), border-color var(--fixhub-transition);
+}
+.fixhub-radio-option:hover {
+  background: rgba(37, 99, 235, .05);
+  border-color: var(--fixhub-accent);
+}
+.fixhub-radio-option input[type="radio"] {
+  accent-color: var(--fixhub-accent);
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FASE 7 — DASHBOARD OPERATIVO ADMIN
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Etiqueta de sección ── */
+.fixhub-ops-section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fixhub-muted);
+  margin-bottom: 0.75rem;
+}
+
+/* ── KPI Cards ── */
+.fixhub-ops-kpi-card {
+  background: var(--fixhub-white);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  padding: 1.1rem 1rem;
+  border-top: 3px solid var(--fixhub-border);
+  transition: box-shadow var(--fixhub-transition);
+}
+.fixhub-ops-kpi-card:hover { box-shadow: var(--fixhub-shadow-lg); }
+.fixhub-ops-kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--fixhub-text);
+  line-height: 1.1;
+}
+.fixhub-ops-kpi-label {
+  font-size: 0.75rem;
+  color: var(--fixhub-muted);
+  margin-top: 0.2rem;
+}
+/* Color de tope según tipo */
+.fixhub-ops-kpi-total      { border-top-color: var(--fixhub-primary); }
+.fixhub-ops-kpi-open       { border-top-color: #D97706; }
+.fixhub-ops-kpi-assigned   { border-top-color: var(--fixhub-accent); }
+.fixhub-ops-kpi-inprogress { border-top-color: #D97706; }
+.fixhub-ops-kpi-completed  { border-top-color: var(--fixhub-success); }
+.fixhub-ops-kpi-issues     { border-top-color: #DC2626; }
+.fixhub-ops-kpi-ok         { border-top-color: var(--fixhub-success); }
+
+/* ── Lista de alertas SLA ── */
+.fixhub-ops-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.fixhub-ops-alert-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--fixhub-white);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  padding: 0.85rem 1.1rem;
+  border-left: 4px solid #DC2626;
+}
+.fixhub-ops-alert-left { display: flex; align-items: center; gap: 0.85rem; min-width: 0; flex: 1; }
+.fixhub-ops-alert-badge { white-space: nowrap; }
+.fixhub-ops-alert-title { display: flex; flex-direction: column; min-width: 0; }
+.fixhub-ops-alert-meta {
+  font-size: 0.78rem;
+  color: var(--fixhub-muted);
+  margin-top: 0.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+.fixhub-ops-elapsed {
+  font-size: 0.72rem;
+  background: rgba(217, 119, 6, .1);
+  color: #92400E;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.fixhub-ops-elapsed-danger {
+  background: rgba(220, 38, 38, .1);
+  color: #7F1D1D;
+}
+.fixhub-ops-alert-cta { white-space: nowrap; flex-shrink: 0; }
+
+/* ── Estado vacío ── */
+.fixhub-ops-empty-state {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(22, 163, 74, .06);
+  border: 1px solid rgba(22, 163, 74, .2);
+  border-radius: var(--fixhub-radius);
+  padding: 1rem 1.25rem;
+  font-size: 0.9rem;
+  color: #15803D;
+}
+.fixhub-ops-empty-icon { font-size: 1.25rem; }
+
+/* ── Paneles de contenido ── */
+.fixhub-ops-panel {
+  background: var(--fixhub-white);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  overflow: hidden;
+}
+.fixhub-ops-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--fixhub-border);
+  background: var(--fixhub-bg);
+}
+.fixhub-ops-panel-title { font-size: 0.9rem; font-weight: 700; color: var(--fixhub-text); }
+.fixhub-ops-panel-body { padding: 0.75rem 1.25rem; }
+
+/* ── Lista de incidencias en panel ── */
+.fixhub-ops-issue-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.fixhub-ops-issue-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--fixhub-border);
+}
+.fixhub-ops-issue-item:last-child { border-bottom: none; }
+.fixhub-ops-issue-reason { flex-shrink: 0; }
+.fixhub-ops-issue-meta { display: flex; flex-direction: column; min-width: 0; }
+
+/* ── Tabla de solicitudes recientes ── */
+.fixhub-ops-table thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--fixhub-muted);
+  border-bottom: 2px solid var(--fixhub-border);
+  padding: 0.6rem 1rem;
+}
+.fixhub-ops-table tbody td { padding: 0.6rem 1rem; vertical-align: middle; }
+.fixhub-ops-table tbody tr:hover { background: rgba(37, 99, 235, .03); }
+
+/* ── Responsive dashboard ── */
+@media (max-width: 767.98px) {
+  .fixhub-ops-kpi-value { font-size: 1.6rem; }
+  .fixhub-ops-alert-item { flex-direction: column; align-items: flex-start; }
+  .fixhub-ops-alert-cta { width: 100%; text-align: center; }
+  .fixhub-ops-panel-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .fixhub-ops-panel-header .btn { width: 100%; text-align: center; }
+}
+
+/* ══ FASE 7.2 — Dashboard accionable ══════════════════════════════════════ */
+
+/* ── Barra de métricas operativas ── */
+.fixhub-ops-metrics-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--fixhub-white);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  padding: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.fixhub-ops-metric-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 150px;
+}
+.fixhub-ops-metric-icon { font-size: 1.4rem; line-height: 1; }
+.fixhub-ops-metric-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+  line-height: 1.1;
+}
+.fixhub-ops-metric-label {
+  font-size: 0.72rem;
+  color: var(--fixhub-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.fixhub-ops-metric-danger .fixhub-ops-metric-value { color: #DC2626; }
+.fixhub-ops-metric-divider {
+  width: 1px;
+  height: 2.5rem;
+  background: var(--fixhub-border);
+  flex-shrink: 0;
+  margin: 0 0.5rem;
+}
+
+/* ── Severidad de alertas ── */
+.fixhub-ops-alert-severity-icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.fixhub-ops-alert-critical {
+  background: rgba(220, 38, 38, .06);
+  border-left: 3px solid #DC2626;
+}
+.fixhub-ops-alert-critical .fixhub-ops-alert-title a { color: #DC2626; }
+.fixhub-ops-alert-warning {
+  background: rgba(217, 119, 6, .06);
+  border-left: 3px solid #D97706;
+}
+
+/* ── Columna de acciones en tabla ── */
+.fixhub-ops-actions-col { width: 1%; white-space: nowrap; }
+
+/* ── Botones inline extra pequeños ── */
+.fixhub-ops-inline-btn {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* ── Responsive FASE 7.2 ── */
+@media (max-width: 767.98px) {
+  .fixhub-ops-metrics-bar { gap: 0.75rem; }
+  .fixhub-ops-metric-divider { display: none; }
+  .fixhub-ops-metric-item { min-width: calc(50% - 0.5rem); }
+  .fixhub-ops-actions-col { min-width: 160px; }
+  .fixhub-ops-inline-btn { font-size: 0.68rem; padding: 0.18rem 0.45rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FASE 12 — Experiencia Premium Cliente (Jobs/Detail, mobile-first)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.fixhub-premium-wrapper { padding: 0 0 2rem; }
+.fixhub-premium-progress {
+  height: 6px;
+  background: var(--fixhub-border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  transition: background 0.3s ease;
+}
+.fixhub-premium-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--fixhub-accent), var(--fixhub-success));
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(.16,.84,.44,1);
+}
+.fixhub-premium-progress.fixhub-premium-progress-cancelled .fixhub-premium-progress-bar {
+  background: #DC2626;
+}
+.fixhub-premium-status-msg {
+  font-size: 0.95rem;
+  color: var(--fixhub-text);
+  line-height: 1.5;
+  padding: 1rem 1.25rem;
+  background: rgba(30, 58, 138, .06);
+  border-radius: var(--fixhub-radius);
+  border-left: 4px solid var(--fixhub-accent);
+  margin-bottom: 1.5rem;
+}
+.fixhub-premium-status-msg.fixhub-premium-status-cancelled {
+  background: rgba(220, 38, 38, .08);
+  border-left-color: #DC2626;
+  color: #991b1b;
+}
+.fixhub-premium-tech-card {
+  background: var(--fixhub-white);
+  border: 1px solid var(--fixhub-border);
+  border-radius: var(--fixhub-radius);
+  padding: 1.5rem;
+  box-shadow: var(--fixhub-shadow);
+  margin-bottom: 1.5rem;
+  animation: fixhub-slide-up 0.4s cubic-bezier(.16,.84,.44,1) both;
+}
+.fixhub-premium-tech-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.fixhub-premium-tech-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--fixhub-primary), var(--fixhub-accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+.fixhub-premium-tech-info { flex: 1; min-width: 0; }
+.fixhub-premium-tech-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--fixhub-text);
+  margin-bottom: 0.35rem;
+}
+.fixhub-premium-tech-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.fixhub-premium-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  background: rgba(22, 163, 74, .12);
+  color: var(--fixhub-success);
+}
+.fixhub-premium-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.fixhub-premium-actions .btn { min-width: 0; }
+@media (max-width: 575.98px) {
+  .fixhub-premium-actions { flex-direction: column; }
+  .fixhub-premium-actions .btn { width: 100%; }
+}
+.fixhub-premium-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+.fixhub-premium-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--fixhub-border);
+  transition: opacity 0.3s ease;
+}
+.fixhub-premium-timeline-item:last-child { border-bottom: none; }
+.fixhub-premium-timeline-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--fixhub-border);
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+  transition: background 0.3s ease;
+}
+.fixhub-premium-timeline-item.fixhub-premium-timeline-done .fixhub-premium-timeline-dot {
+  background: var(--fixhub-success);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, .2);
+}
+.fixhub-premium-timeline-item.fixhub-premium-timeline-pending .fixhub-premium-timeline-label { color: var(--fixhub-muted); }
+.fixhub-premium-timeline-label { font-weight: 600; font-size: 0.9rem; color: var(--fixhub-text); }
+.fixhub-premium-timeline-time { font-size: 0.8rem; color: var(--fixhub-muted); margin-top: 0.2rem; display: block; }
+.fixhub-premium-cta-rating {
+  background: linear-gradient(135deg, rgba(251, 191, 36, .15), rgba(251, 191, 36, .08));
+  border: 2px solid rgba(251, 191, 36, .5);
+  border-radius: var(--fixhub-radius);
+  padding: 1.75rem;
+  text-align: center;
+  margin: 1.5rem 0;
+  animation: fixhub-slide-up 0.4s cubic-bezier(.16,.84,.44,1) 0.1s both;
+}
+.fixhub-premium-cta-rating-title { font-size: 1.25rem; font-weight: 700; color: var(--fixhub-text); margin-bottom: 0.35rem; }
+.fixhub-premium-cta-rating-sub { font-size: 0.9rem; color: var(--fixhub-muted); margin-bottom: 1rem; }
+.fixhub-premium-cta-rating .btn { padding: 0.85rem 2rem; font-size: 1.05rem; }
+.fixhub-premium-btn-loading {
+  position: relative;
+  pointer-events: none;
+}
+.fixhub-premium-btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: fixhub-spin 0.6s linear infinite;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+@keyframes fixhub-spin { to { transform: translateY(-50%) rotate(360deg); } }

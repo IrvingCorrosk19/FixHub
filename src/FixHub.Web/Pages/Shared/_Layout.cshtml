@@ -50,6 +50,7 @@
                     <ul class="navbar-nav align-items-lg-center">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
+                            @await Component.InvokeAsync("NotificationBell")
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
                                     @User.Identity.Name
@@ -63,13 +64,17 @@
                                     }
                                     @if (User.IsInRole("Admin"))
                                     {
+                                        <li><a class="dropdown-item fw-semibold" asp-page="/Admin/Dashboard">📊 Dashboard</a></li>
+                                        <li><hr class="dropdown-divider" /></li>
                                         <li><a class="dropdown-item" asp-page="/Admin/Applicants">Postulantes</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Admin/Issues">Incidencias</a></li>
                                     }
                                     @if (User.IsInRole("Technician"))
                                     {
                                         <li><a class="dropdown-item" asp-page="/Technician/MyAssignments">Mis asignaciones</a></li>
                                         <li><a class="dropdown-item" asp-page="/Technicians/Profile" asp-route-id="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value">Mi perfil técnico</a></li>
                                     }
+                                    <li><a class="dropdown-item" asp-page="/Notifications/Index">🔔 Notificaciones</a></li>
                                     <li><hr class="dropdown-divider" /></li>
                                     <li><a class="dropdown-item text-danger" asp-page="/Account/Logout">Cerrar sesión</a></li>
                                 </ul>
@@ -91,30 +96,28 @@
     </header>
 
     <div class="fixhub-main flex-grow-1">
-        <div class="container">
-            @if (TempData["Success"] is string success)
-            {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    @success
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-                </div>
-            }
-            @if (TempData["Error"] is string error)
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    @error
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-                </div>
-            }
-        </div>
-        <main role="main" class="pb-4">
+        @* TempData ocultos — los consume el toast JS *@
+        @if (TempData["Success"] is string successMsg)
+        {
+            <div id="toastDataSuccess" data-message="@successMsg" style="display:none"></div>
+        }
+        @if (TempData["Error"] is string errorMsg)
+        {
+            <div id="toastDataError" data-message="@errorMsg" style="display:none"></div>
+        }
+
+        <main role="main" class="pb-5">
             @RenderBody()
         </main>
     </div>
 
+    @* ── TOAST CONTAINER (posición fija, bottom-right) ── *@
+    <div id="fixhubToastContainer" class="fixhub-toast-container" aria-live="polite" aria-atomic="true"></div>
+
     <footer class="fixhub-footer">
         <div class="fixhub-container text-center">
-            &copy; @DateTime.UtcNow.Year FixHub — Marketplace de servicios del hogar
+            &copy; @DateTime.UtcNow.Year FixHub — Servicios técnicos del hogar &nbsp;·&nbsp;
+            <a href="mailto:soporte@fixhub.com" class="text-muted">soporte@fixhub.com</a>
         </div>
     </footer>
 

@@ -1,4 +1,6 @@
 using FixHub.Application.Common.Behaviors;
+using FixHub.Application.Common.Models;
+using FixHub.Application.Features.Admin;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,7 @@ public static class DependencyInjection
             cfg.RegisterServicesFromAssembly(assembly);
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(AuditBehavior<,>));
+            cfg.AddBehavior(typeof(IPipelineBehavior<GetOpsDashboardQuery, Result<OpsDashboardDto>>), typeof(DashboardCachingBehavior));
         });
 
         services.AddValidatorsFromAssembly(assembly);

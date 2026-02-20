@@ -57,6 +57,15 @@ public class JobConfiguration : IEntityTypeConfiguration<Job>
             .HasColumnName("created_at")
             .HasDefaultValueSql("NOW()");
 
+        builder.Property(j => j.AssignedAt)
+            .HasColumnName("assigned_at");
+
+        builder.Property(j => j.CompletedAt)
+            .HasColumnName("completed_at");
+
+        builder.Property(j => j.CancelledAt)
+            .HasColumnName("cancelled_at");
+
         // Indexes críticos para queries frecuentes
         builder.HasIndex(j => j.Status);
         builder.HasIndex(j => j.CustomerId);

@@ -1,3 +1,4 @@
+using FixHub.Web.Helpers;
 using FixHub.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,29 +27,11 @@ public class MyModel(IFixHubApiClient apiClient) : PageModel
         if (result.IsSuccess)
             Jobs = result.Value;
         else
-            ErrorMessage = result.ErrorMessage;
+            ErrorMessage = result.IsSuccess ? null : ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
 
         return Page();
     }
 
-    /// <summary>Estado en lenguaje cliente (solo mis solicitudes, sin "Por: otro cliente").</summary>
-    public static string StatusLabel(string status) => status switch
-    {
-        "Open" => "Recibida",
-        "Assigned" => "Técnico asignado / En progreso",
-        "InProgress" => "Técnico asignado / En progreso",
-        "Completed" => "Finalizada",
-        "Cancelled" => "Cancelada",
-        _ => status
-    };
-
-    public static string StatusBadge(string status) => status switch
-    {
-        "Open" => "bg-success",
-        "Assigned" => "bg-primary",
-        "InProgress" => "bg-warning text-dark",
-        "Completed" => "bg-secondary",
-        "Cancelled" => "bg-danger",
-        _ => "bg-light text-dark"
-    };
+    public static string StatusLabel(string status) => StatusHelper.Label(status);
+    public static string StatusBadge(string status) => StatusHelper.Badge(status);
 }

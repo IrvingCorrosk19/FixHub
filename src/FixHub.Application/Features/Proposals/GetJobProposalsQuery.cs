@@ -21,18 +21,23 @@ public class GetJobProposalsQueryHandler(IApplicationDbContext db)
         if (job is null)
             return Result<List<ProposalDto>>.Failure("Job not found.", "JOB_NOT_FOUND");
 
-        // Solo el Customer dueño del job o Admin puede ver las proposals
-        if (!req.IsAdmin && job.CustomerId != req.RequesterId)
-            return Result<List<ProposalDto>>.Failure(
-                "Access denied.", "FORBIDDEN");
-
-        var proposals = await db.Proposals
+        var query = db.Proposals
             .Include(p => p.Technician)
-            .Where(p => p.JobId == req.JobId)
+            .Where(p => p.JobId == req.JobId);
+
+        // Admin: ve todas las propuestas. Technician: solo las suyas (para saber si ya postuló). Customer: no ve.
+        if (req.IsAdmin)
+        {
+            var proposals = await query.OrderByDescending(p => p.CreatedAt).ToListAsync(ct);
+            return Result<List<ProposalDto>>.Success(
+                proposals.Select(p => p.ToDto(p.Technician.FullName)).ToList());
+        }
+
+        var myProposals = await query
+            .Where(p => p.TechnicianId == req.RequesterId)
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync(ct);
-
         return Result<List<ProposalDto>>.Success(
-            proposals.Select(p => p.ToDto(p.Technician.FullName)).ToList());
+            myProposals.Select(p => p.ToDto(p.Technician.FullName)).ToList());
     }
 }

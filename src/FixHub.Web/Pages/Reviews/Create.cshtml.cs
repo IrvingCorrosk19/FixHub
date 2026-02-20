@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FixHub.Web.Helpers;
 using FixHub.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -45,7 +46,7 @@ public class CreateModel(IFixHubApiClient apiClient) : PageModel
 
         if (!result.IsSuccess)
         {
-            ErrorMessage = result.ErrorMessage ?? "Error al publicar la reseña.";
+            ErrorMessage = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
             return Page();
         }
 

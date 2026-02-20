@@ -1,4 +1,5 @@
 using FixHub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
 using FixHub.Application.Common.Models;
 using FixHub.Domain.Enums;
 using MediatR;
@@ -10,7 +11,7 @@ namespace FixHub.Application.Features.Jobs;
 public record CompleteJobCommand(Guid JobId, Guid CustomerId) : IRequest<Result<JobDto>>;
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
-public class CompleteJobCommandHandler(IApplicationDbContext db)
+public class CompleteJobCommandHandler(IApplicationDbContext db, ILogger<CompleteJobCommandHandler> logger, INotificationService notifications)
     : IRequestHandler<CompleteJobCommand, Result<JobDto>>
 {
     public async Task<Result<JobDto>> Handle(CompleteJobCommand req, CancellationToken ct)
@@ -32,7 +33,9 @@ public class CompleteJobCommandHandler(IApplicationDbContext db)
                 $"Job must be InProgress or Assigned to complete. Current status: {job.Status}",
                 "INVALID_STATUS");
 
+        var statusBefore = job.Status.ToString();
         job.Status = JobStatus.Completed;
+        job.CompletedAt = DateTime.UtcNow;
 
         if (job.Assignment is not null)
             job.Assignment.CompletedAt = DateTime.UtcNow;
@@ -54,6 +57,20 @@ public class CompleteJobCommandHandler(IApplicationDbContext db)
         }
 
         await db.SaveChangesAsync(ct);
+        logger.LogInformation("Job status changed. JobId={JobId} StatusBefore={StatusBefore} StatusAfter=Completed",
+            job.Id, statusBefore);
+
+        // Notificar al Cliente (FASE 13)
+        await notifications.NotifyAsync(job.CustomerId, FixHub.Domain.Enums.NotificationType.JobCompleted,
+            "Tu servicio ha sido completado. ¡Gracias por confiar en FixHub! Califica al técnico cuando puedas.", job.Id, ct);
+
+        if (job.Assignment is not null)
+        {
+            var prop = await db.Proposals.FirstOrDefaultAsync(p => p.Id == job.Assignment.ProposalId, ct);
+            if (prop is not null)
+                await notifications.NotifyAsync(prop.TechnicianId, FixHub.Domain.Enums.NotificationType.JobCompleted,
+                    "El cliente ha confirmado la finalización del servicio.", job.Id, ct);
+        }
 
         return Result<JobDto>.Success(
             job.ToDto(job.Customer.FullName, job.Category.Name));

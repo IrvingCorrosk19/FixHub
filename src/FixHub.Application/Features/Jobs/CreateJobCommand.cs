@@ -36,7 +36,13 @@ public record JobDto(
     string Status,
     decimal? BudgetMin,
     decimal? BudgetMax,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    Guid? AssignedTechnicianId = null,
+    string? AssignedTechnicianName = null,
+    DateTime? AssignedAt = null,
+    DateTime? StartedAt = null,
+    DateTime? CompletedAt = null,
+    DateTime? CancelledAt = null
 );
 
 // ─── Validator ────────────────────────────────────────────────────────────────
@@ -59,7 +65,7 @@ public class CreateJobCommandValidator : AbstractValidator<CreateJobCommand>
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
-public class CreateJobCommandHandler(IApplicationDbContext db)
+public class CreateJobCommandHandler(IApplicationDbContext db, IDashboardCacheInvalidator dashboardCache, INotificationService notifications)
     : IRequestHandler<CreateJobCommand, Result<JobDto>>
 {
     public async Task<Result<JobDto>> Handle(CreateJobCommand req, CancellationToken ct)
@@ -94,6 +100,63 @@ public class CreateJobCommandHandler(IApplicationDbContext db)
 
         db.Jobs.Add(job);
         await db.SaveChangesAsync(ct);
+        dashboardCache.Invalidate();
+
+        // Notificar a Cliente: solicitud recibida (FASE 13)
+        await notifications.NotifyAsync(req.CustomerId, NotificationType.JobCreated,
+            "Hemos recibido tu solicitud. Te asignaremos un técnico pronto.", job.Id, ct);
+
+        // Notificar a Admins: nueva solicitud
+        var adminIds = await db.Users
+            .Where(u => u.Role == UserRole.Admin)
+            .Select(u => u.Id)
+            .ToListAsync(ct);
+        if (adminIds.Count > 0)
+            await notifications.NotifyManyAsync(adminIds, NotificationType.JobCreated,
+                $"Nueva solicitud: {job.Title}", job.Id, ct);
+
+        // Auto-asignar al técnico aprobado único (por el momento un solo técnico).
+        var techProfile = await db.TechnicianProfiles
+            .Include(tp => tp.User)
+            .FirstOrDefaultAsync(tp => tp.Status == TechnicianStatus.Approved, ct);
+
+        if (techProfile != null)
+        {
+            var price = req.BudgetMin ?? req.BudgetMax ?? 1m;
+            var proposal = new Proposal
+            {
+                Id = Guid.NewGuid(),
+                JobId = job.Id,
+                TechnicianId = techProfile.UserId,
+                Price = price,
+                Message = "Asignación automática",
+                Status = ProposalStatus.Accepted,
+                CreatedAt = DateTime.UtcNow
+            };
+            db.Proposals.Add(proposal);
+
+            db.JobAssignments.Add(new JobAssignment
+            {
+                Id = Guid.NewGuid(),
+                JobId = job.Id,
+                ProposalId = proposal.Id,
+                AcceptedAt = DateTime.UtcNow
+            });
+
+            job.Status = JobStatus.Assigned;
+            job.AssignedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync(ct);
+            dashboardCache.Invalidate();
+
+            // Notificar Customer + Technician por auto-asignación
+            await notifications.NotifyAsync(req.CustomerId, NotificationType.JobAssigned,
+                "Tu solicitud ha sido asignada a un técnico.", job.Id, ct);
+            await notifications.NotifyAsync(techProfile.UserId, NotificationType.JobAssigned,
+                $"Has sido asignado a: {job.Title}", job.Id, ct);
+
+            return Result<JobDto>.Success(job.ToDto(
+                customer.FullName, category.Name, techProfile.UserId, techProfile.User.FullName));
+        }
 
         return Result<JobDto>.Success(job.ToDto(customer.FullName, category.Name));
     }
@@ -102,8 +165,11 @@ public class CreateJobCommandHandler(IApplicationDbContext db)
 // ─── Extension ────────────────────────────────────────────────────────────────
 public static class JobMappingExtensions
 {
-    public static JobDto ToDto(this Job job, string customerName, string categoryName) =>
+    public static JobDto ToDto(this Job job, string customerName, string categoryName,
+        Guid? assignedTechnicianId = null, string? assignedTechnicianName = null) =>
         new(job.Id, job.CustomerId, customerName, job.CategoryId, categoryName,
             job.Title, job.Description, job.AddressText, job.Lat, job.Lng,
-            job.Status.ToString(), job.BudgetMin, job.BudgetMax, job.CreatedAt);
+            job.Status.ToString(), job.BudgetMin, job.BudgetMax, job.CreatedAt,
+            assignedTechnicianId, assignedTechnicianName,
+            job.AssignedAt, job.Assignment?.StartedAt, job.CompletedAt, job.CancelledAt);
 }

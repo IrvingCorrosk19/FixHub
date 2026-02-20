@@ -1,3 +1,4 @@
+using FixHub.Web.Helpers;
 using FixHub.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +26,7 @@ public class ApplicantsModel(IFixHubApiClient apiClient) : PageModel
         if (result.IsSuccess)
             Applicants = result.Value;
         else
-            ErrorMessage = result.ErrorMessage;
+            ErrorMessage = result.IsSuccess ? null : ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
     }
 
     public async Task<IActionResult> OnPostApproveAsync(Guid id)
@@ -34,7 +35,7 @@ public class ApplicantsModel(IFixHubApiClient apiClient) : PageModel
         if (result.IsSuccess)
             TempData["Success"] = "Técnico aprobado.";
         else
-            TempData["Error"] = result.ErrorMessage ?? "Error al aprobar.";
+            TempData["Error"] = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
         return RedirectToPage(new { page = PageNumber, status = Status });
     }
 
@@ -44,7 +45,7 @@ public class ApplicantsModel(IFixHubApiClient apiClient) : PageModel
         if (result.IsSuccess)
             TempData["Success"] = "Técnico rechazado.";
         else
-            TempData["Error"] = result.ErrorMessage ?? "Error al rechazar.";
+            TempData["Error"] = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
         return RedirectToPage(new { page = PageNumber, status = Status });
     }
 
@@ -54,7 +55,7 @@ public class ApplicantsModel(IFixHubApiClient apiClient) : PageModel
         if (result.IsSuccess)
             TempData["Success"] = "Estado actualizado a entrevista programada.";
         else
-            TempData["Error"] = result.ErrorMessage ?? "Error al actualizar.";
+            TempData["Error"] = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
         return RedirectToPage(new { page = PageNumber, status = Status });
     }
 

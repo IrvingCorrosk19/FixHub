@@ -18,6 +18,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<ScoreSnapshot> ScoreSnapshots => Set<ScoreSnapshot>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<JobIssue> JobIssues => Set<JobIssue>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<NotificationOutbox> NotificationOutbox => Set<NotificationOutbox>();
+    public DbSet<JobAlert> JobAlerts => Set<JobAlert>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

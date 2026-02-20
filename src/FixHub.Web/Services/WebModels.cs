@@ -34,7 +34,13 @@ public record JobDto(
     string Status,
     decimal? BudgetMin,
     decimal? BudgetMax,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    Guid? AssignedTechnicianId = null,
+    string? AssignedTechnicianName = null,
+    DateTime? AssignedAt = null,
+    DateTime? StartedAt = null,
+    DateTime? CompletedAt = null,
+    DateTime? CancelledAt = null);
 
 public record PagedResult<T>(
     List<T> Items,
@@ -144,6 +150,67 @@ public record ApplicantDto(
     string Email,
     string? Phone,
     string Status,
+    DateTime CreatedAt);
+
+// ─── Job Issues (incidencias) ─────────────────────────────────────────────────
+
+public record IssueDto(
+    Guid Id,
+    Guid JobId,
+    string JobTitle,
+    string ReportedByName,
+    string Reason,
+    string? Detail,
+    DateTime CreatedAt);
+
+public record ReportIssueRequest(string Reason, string? Detail);
+
+// ─── Admin Dashboard ──────────────────────────────────────────────────────────
+
+public record DashboardKpisDto(
+    int TotalToday,
+    int OpenToday,
+    int AssignedToday,
+    int InProgressToday,
+    int CompletedToday,
+    int CancelledToday,
+    int IssuesLast24h,
+    int? AvgAssignmentTimeMinutes,
+    int? AvgCompletionTimeMinutes,
+    decimal? CancellationRateToday);
+
+public record DashboardAlertJobDto(
+    Guid JobId,
+    string Title,
+    string CustomerName,
+    string Status,
+    DateTime CreatedAt,
+    int ElapsedMinutes,
+    string AlertType,
+    string Severity);
+
+public record DashboardRecentJobDto(
+    Guid JobId,
+    string Title,
+    string CustomerName,
+    string CategoryName,
+    string Status,
+    DateTime CreatedAt);
+
+public record OpsDashboardDto(
+    DashboardKpisDto Kpis,
+    List<DashboardAlertJobDto> Alerts,
+    List<DashboardRecentJobDto> RecentJobs,
+    List<IssueDto> RecentIssues);
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+public record NotificationDto(
+    Guid Id,
+    Guid? JobId,
+    string Type,
+    string Message,
+    bool IsRead,
     DateTime CreatedAt);
 
 // ─── Errors ───────────────────────────────────────────────────────────────────

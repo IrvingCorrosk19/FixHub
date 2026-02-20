@@ -1,0 +1,389 @@
+@page
+@model FixHub.Web.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Dashboard Operativo";
+}
+
+@* ── Toast de resultado de acción inline ── *@
+@if (TempData["Success"] is string successMsg)
+{
+    <div id="toast-data" data-msg="@successMsg" data-type="success"></div>
+}
+@if (TempData["Error"] is string errorMsg)
+{
+    <div id="toast-data" data-msg="@errorMsg" data-type="error"></div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2 class="fixhub-section-title mb-0">Dashboard Operativo</h2>
+    <span class="text-muted small">
+        Actualizado: <strong>@DateTime.Now.ToString("HH:mm")</strong>
+        &nbsp;·&nbsp;
+        <a href="" class="text-decoration-none text-muted">↻ Refrescar</a>
+    </span>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+@if (Model.Data is { } data)
+{
+    var kpis = data.Kpis;
+
+    @* ── KPIs del día ── *@
+    <h6 class="fixhub-ops-section-label">Hoy · @DateTime.UtcNow.ToLocalTime().ToString("dd/MM/yyyy")</h6>
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="fixhub-ops-kpi-card fixhub-ops-kpi-total">
+                <div class="fixhub-ops-kpi-value">@kpis.TotalToday</div>
+                <div class="fixhub-ops-kpi-label">Total solicitudes</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="fixhub-ops-kpi-card fixhub-ops-kpi-open">
+                <div class="fixhub-ops-kpi-value">@kpis.OpenToday</div>
+                <div class="fixhub-ops-kpi-label">Recibidas</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="fixhub-ops-kpi-card fixhub-ops-kpi-assigned">
+                <div class="fixhub-ops-kpi-value">@kpis.AssignedToday</div>
+                <div class="fixhub-ops-kpi-label">Asignadas</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="fixhub-ops-kpi-card fixhub-ops-kpi-inprogress">
+                <div class="fixhub-ops-kpi-value">@kpis.InProgressToday</div>
+                <div class="fixhub-ops-kpi-label">En camino</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="fixhub-ops-kpi-card fixhub-ops-kpi-completed">
+                <div class="fixhub-ops-kpi-value">@kpis.CompletedToday</div>
+                <div class="fixhub-ops-kpi-label">Completadas</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="fixhub-ops-kpi-card @(kpis.IssuesLast24h > 0 ? "fixhub-ops-kpi-issues" : "fixhub-ops-kpi-ok")">
+                <div class="fixhub-ops-kpi-value">@kpis.IssuesLast24h</div>
+                <div class="fixhub-ops-kpi-label">Incidencias (24h)</div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Métricas operativas ── *@
+    <div class="fixhub-ops-metrics-bar mb-4">
+        <div class="fixhub-ops-metric-item">
+            <span class="fixhub-ops-metric-icon">⚡</span>
+            <div>
+                <div class="fixhub-ops-metric-value">@DashboardModel.FormatMinutes(kpis.AvgAssignmentTimeMinutes)</div>
+                <div class="fixhub-ops-metric-label">Promedio asignación</div>
+            </div>
+        </div>
+        <div class="fixhub-ops-metric-divider"></div>
+        <div class="fixhub-ops-metric-item">
+            <span class="fixhub-ops-metric-icon">🏁</span>
+            <div>
+                <div class="fixhub-ops-metric-value">@DashboardModel.FormatMinutes(kpis.AvgCompletionTimeMinutes)</div>
+                <div class="fixhub-ops-metric-label">Promedio resolución</div>
+            </div>
+        </div>
+        <div class="fixhub-ops-metric-divider"></div>
+        <div class="fixhub-ops-metric-item @(kpis.CancellationRateToday >= 20 ? "fixhub-ops-metric-danger" : "")">
+            <span class="fixhub-ops-metric-icon">@(kpis.CancellationRateToday >= 20 ? "⚠️" : "📊")</span>
+            <div>
+                <div class="fixhub-ops-metric-value">
+                    @(kpis.CancellationRateToday.HasValue ? $"{kpis.CancellationRateToday:0.#}%" : "—")
+                </div>
+                <div class="fixhub-ops-metric-label">Tasa cancelación (hoy)</div>
+            </div>
+        </div>
+        <div class="fixhub-ops-metric-divider"></div>
+        <div class="fixhub-ops-metric-item">
+            <span class="fixhub-ops-metric-icon">🔔</span>
+            <div>
+                <div class="fixhub-ops-metric-value">@data.Alerts.Count</div>
+                <div class="fixhub-ops-metric-label">Alertas activas</div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Alertas SLA ── *@
+    <h6 class="fixhub-ops-section-label">
+        Alertas
+        @if (data.Alerts.Count > 0)
+        {
+            var criticalCount = data.Alerts.Count(a => a.Severity == "CRITICAL");
+            if (criticalCount > 0)
+            {
+                <span class="badge fixhub-badge-cancelled ms-1">@criticalCount CRÍTICA@(criticalCount > 1 ? "S" : "")</span>
+            }
+            if (data.Alerts.Count - criticalCount > 0)
+            {
+                <span class="badge fixhub-badge-pending ms-1">@(data.Alerts.Count - criticalCount) ADVERTENCIA@(data.Alerts.Count - criticalCount > 1 ? "S" : "")</span>
+            }
+        }
+    </h6>
+
+    @if (data.Alerts.Count == 0)
+    {
+        <div class="fixhub-ops-empty-state mb-4">
+            <span class="fixhub-ops-empty-icon">✅</span>
+            <span>No hay alertas activas. ¡Todo en orden!</span>
+        </div>
+    }
+    else
+    {
+        <div class="fixhub-ops-alert-list mb-4">
+            @foreach (var alert in data.Alerts)
+            {
+                <div class="fixhub-ops-alert-item @DashboardModel.AlertRowClass(alert.Severity)">
+                    <div class="fixhub-ops-alert-left">
+                        <span class="fixhub-ops-alert-severity-icon">@DashboardModel.SeverityIcon(alert.Severity)</span>
+                        <span class="badge @DashboardModel.AlertBadgeClass(alert.AlertType, alert.Severity) fixhub-ops-alert-badge">
+                            @DashboardModel.AlertTypeLabel(alert.AlertType)
+                        </span>
+                        <div class="fixhub-ops-alert-title">
+                            <a asp-page="/Jobs/Detail" asp-route-id="@alert.JobId"
+                               class="text-decoration-none fw-semibold">
+                                @alert.Title
+                            </a>
+                            <span class="fixhub-ops-alert-meta">
+                                @alert.CustomerName
+                                &nbsp;·&nbsp;
+                                <time title="@alert.CreatedAt.ToString("dd/MM/yyyy HH:mm")">
+                                    @DashboardModel.RelativeTime(alert.CreatedAt)
+                                </time>
+                                @if (alert.ElapsedMinutes >= 60)
+                                {
+                                    <span class="fixhub-ops-elapsed fixhub-ops-elapsed-danger">
+                                        @($"{alert.ElapsedMinutes / 60}h {alert.ElapsedMinutes % 60}min")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="fixhub-ops-elapsed">@($"{alert.ElapsedMinutes} min")</span>
+                                }
+                            </span>
+                        </div>
+                    </div>
+                    <a asp-page="/Jobs/Detail" asp-route-id="@alert.JobId"
+                       class="btn btn-sm btn-fixhub-outline fixhub-ops-alert-cta">
+                        Ver solicitud →
+                    </a>
+                </div>
+            }
+        </div>
+    }
+
+    @* ── Contenido principal: dos columnas ── *@
+    <div class="row g-4">
+
+        @* ── Incidencias recientes ── *@
+        <div class="col-lg-5">
+            <div class="fixhub-ops-panel">
+                <div class="fixhub-ops-panel-header">
+                    <h6 class="fixhub-ops-panel-title mb-0">Incidencias recientes</h6>
+                    <a asp-page="/Admin/Issues" class="btn btn-sm btn-fixhub-outline">Ver todas</a>
+                </div>
+                <div class="fixhub-ops-panel-body">
+                    @if (data.RecentIssues.Count == 0)
+                    {
+                        <p class="text-muted small mb-0 py-2">Sin incidencias recientes.</p>
+                    }
+                    else
+                    {
+                        <ul class="fixhub-ops-issue-list">
+                            @foreach (var issue in data.RecentIssues)
+                            {
+                                <li class="fixhub-ops-issue-item">
+                                    <div class="fixhub-ops-issue-reason">
+                                        <span class="badge bg-warning text-dark badge-sm">
+                                            @DashboardModel.ReasonLabel(issue.Reason)
+                                        </span>
+                                    </div>
+                                    <div class="fixhub-ops-issue-meta">
+                                        <a asp-page="/Jobs/Detail" asp-route-id="@issue.JobId"
+                                           class="text-decoration-none fw-semibold small">
+                                            @issue.JobTitle
+                                        </a>
+                                        <span class="text-muted small">
+                                            &nbsp;·&nbsp; @issue.ReportedByName
+                                            &nbsp;·&nbsp; @DashboardModel.RelativeTime(issue.CreatedAt)
+                                        </span>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── Solicitudes recientes con acciones inline ── *@
+        <div class="col-lg-7">
+            <div class="fixhub-ops-panel">
+                <div class="fixhub-ops-panel-header">
+                    <h6 class="fixhub-ops-panel-title mb-0">Solicitudes recientes</h6>
+                    <a asp-page="/Jobs/Index" class="btn btn-sm btn-fixhub-outline">Ver todas</a>
+                </div>
+                <div class="fixhub-ops-panel-body p-0">
+                    @if (data.RecentJobs.Count == 0)
+                    {
+                        <p class="text-muted small mb-0 p-3">Sin solicitudes registradas.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm fixhub-ops-table mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Solicitud</th>
+                                        <th>Estado</th>
+                                        <th>Hace</th>
+                                        <th class="fixhub-ops-actions-col">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var job in data.RecentJobs)
+                                    {
+                                        var actions = DashboardModel.AvailableActions(job.Status);
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold small">
+                                                    @(job.Title.Length > 28 ? job.Title[..28] + "…" : job.Title)
+                                                </div>
+                                                <div class="text-muted" style="font-size:0.75rem;">
+                                                    @job.CustomerName · @job.CategoryName
+                                                </div>
+                                            </td>
+                                            <td class="align-middle">
+                                                <span class="badge @DashboardModel.StatusBadge(job.Status)">
+                                                    @DashboardModel.StatusLabel(job.Status)
+                                                </span>
+                                            </td>
+                                            <td class="small text-muted text-nowrap align-middle">
+                                                @DashboardModel.RelativeTime(job.CreatedAt)
+                                            </td>
+                                            <td class="align-middle">
+                                                @if (actions.Count > 0)
+                                                {
+                                                    <div class="d-flex gap-1 flex-wrap">
+                                                        @foreach (var (newStatus, label, btnClass) in actions)
+                                                        {
+                                                            <button type="button"
+                                                                    class="btn btn-xs @btnClass fixhub-ops-inline-btn"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#modal-action-@job.JobId"
+                                                                    data-job-id="@job.JobId"
+                                                                    data-new-status="@newStatus"
+                                                                    data-label="@label"
+                                                                    data-job-title="@job.Title">
+                                                                @label
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <a asp-page="/Jobs/Detail" asp-route-id="@job.JobId"
+                                                       class="btn btn-xs btn-fixhub-outline py-0 px-2">→</a>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+}
+
+@* ── Modal de confirmación de acción inline (único, reutilizable via JS) ── *@
+<div class="modal fade" id="modal-inline-action" tabindex="-1" aria-labelledby="modal-inline-action-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-semibold" id="modal-inline-action-label">Confirmar acción</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="mb-0 text-muted small" id="modal-inline-action-text">
+                    ¿Confirmar cambio de estado?
+                </p>
+            </div>
+            <div class="modal-footer border-0 pt-1">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" asp-page-handler="UpdateStatus" id="form-inline-action" class="d-inline">
+                    <input type="hidden" name="jobId"     id="input-job-id"     value="" />
+                    <input type="hidden" name="newStatus" id="input-new-status" value="" />
+                    @Html.AntiForgeryToken()
+                    <button type="submit" id="btn-inline-confirm"
+                            class="btn btn-sm btn-primary btn-fixhub-loading">
+                        Confirmar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    // ── Poblar modal de acción inline ──────────────────────────────────────
+    const modal = document.getElementById('modal-inline-action');
+    if (!modal) return;
+
+    modal.addEventListener('show.bs.modal', function (e) {
+        const btn        = e.relatedTarget;
+        const jobId      = btn.dataset.jobId;
+        const newStatus  = btn.dataset.newStatus;
+        const label      = btn.dataset.label;
+        const jobTitle   = btn.dataset.jobTitle;
+
+        document.getElementById('input-job-id').value     = jobId;
+        document.getElementById('input-new-status').value = newStatus;
+
+        // Texto descriptivo
+        const isCritical = newStatus === 'Cancelled';
+        const text = document.getElementById('modal-inline-action-text');
+        text.innerHTML = `¿${label} la solicitud <strong>${escHtml(jobTitle)}</strong>? Esta acción no se puede deshacer.`;
+
+        // Color del botón
+        const confirmBtn = document.getElementById('btn-inline-confirm');
+        confirmBtn.className = 'btn btn-sm btn-fixhub-loading ' +
+            (isCritical ? 'btn-danger' : newStatus === 'Completed' ? 'btn-success' : 'btn-warning');
+        confirmBtn.textContent = label;
+        confirmBtn.disabled = false;
+    });
+
+    // ── Loading state al enviar ────────────────────────────────────────────
+    document.getElementById('form-inline-action')?.addEventListener('submit', function () {
+        const btn = document.getElementById('btn-inline-confirm');
+        btn.disabled = true;
+        btn.classList.add('btn-loading');
+    });
+
+    // ── Toast desde TempData ───────────────────────────────────────────────
+    const toastData = document.getElementById('toast-data');
+    if (toastData) {
+        const msg  = toastData.dataset.msg;
+        const type = toastData.dataset.type;
+        if (msg && typeof showToast === 'function') {
+            showToast(msg, type === 'success' ? 'success' : 'error');
+        }
+    }
+
+    function escHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+})();
+</script>
+}

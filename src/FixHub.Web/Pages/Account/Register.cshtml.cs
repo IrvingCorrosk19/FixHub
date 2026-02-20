@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using FixHub.Web.Helpers;
 using FixHub.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
@@ -54,9 +55,7 @@ public class RegisterModel(IFixHubApiClient apiClient) : PageModel
 
         if (!result.IsSuccess)
         {
-            ErrorMessage = result.StatusCode == 409
-                ? "El correo ya está registrado."
-                : result.ErrorMessage ?? "Error al crear la cuenta.";
+            ErrorMessage = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
             return Page();
         }
 

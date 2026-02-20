@@ -221,6 +221,7 @@ app.UseHttpsRedirection();
 app.UseCors("WebPolicy");
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<RequestContextLoggingMiddleware>(); // FASE 14: UserId, JobId en scope
 app.UseAuthorization();
 app.MapControllers();
 

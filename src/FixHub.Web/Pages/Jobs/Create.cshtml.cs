@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FixHub.Web.Helpers;
 using FixHub.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,12 +32,6 @@ public class CreateModel(IFixHubApiClient apiClient) : PageModel
         [Required(ErrorMessage = "La dirección es obligatoria.")]
         [StringLength(500)]
         public string AddressText { get; set; } = string.Empty;
-
-        [Range(0, 999999)]
-        public decimal? BudgetMin { get; set; }
-
-        [Range(0, 999999)]
-        public decimal? BudgetMax { get; set; }
     }
 
     public IActionResult OnGet()
@@ -64,18 +59,14 @@ public class CreateModel(IFixHubApiClient apiClient) : PageModel
             Input.Description,
             Input.AddressText,
             null, null,
-            Input.BudgetMin,
-            Input.BudgetMax));
+            null, null));
 
         if (!result.IsSuccess)
         {
-            ErrorMessage = result.StatusCode == 403
-                ? "Solo los clientes pueden publicar trabajos. Tu cuenta es de técnico."
-                : (result.ErrorMessage ?? "Error al publicar el trabajo.");
+            ErrorMessage = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
             return Page();
         }
 
-        TempData["Success"] = "Solicitud recibida. FixHub te asignará un técnico verificado y te contactaremos pronto.";
-        return RedirectToPage("/Requests/My");
+        return RedirectToPage("/Requests/Confirmation", new { id = result.Value!.Id });
     }
 }

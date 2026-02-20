@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using FixHub.Web.Helpers;
 using FixHub.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
@@ -34,9 +35,7 @@ public class LoginModel(IFixHubApiClient apiClient) : PageModel
 
         if (!result.IsSuccess)
         {
-            ErrorMessage = result.StatusCode == 401
-                ? "Credenciales incorrectas."
-                : result.ErrorMessage ?? "Error al iniciar sesión.";
+            ErrorMessage = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
             return Page();
         }
 

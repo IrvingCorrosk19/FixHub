@@ -1,3 +1,4 @@
+using FixHub.Web.Helpers;
 using FixHub.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,28 +25,11 @@ public class MyAssignmentsModel(IFixHubApiClient apiClient) : PageModel
         if (result.IsSuccess)
             Assignments = result.Value;
         else
-            ErrorMessage = result.ErrorMessage;
+            ErrorMessage = result.IsSuccess ? null : ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
 
         return Page();
     }
 
-    public static string StatusBadge(string status) => status switch
-    {
-        "Open"       => "bg-success",
-        "Assigned"   => "bg-primary",
-        "InProgress" => "bg-warning text-dark",
-        "Completed"  => "bg-secondary",
-        "Cancelled"  => "bg-danger",
-        _            => "bg-light text-dark"
-    };
-
-    public static string StatusLabel(string status) => status switch
-    {
-        "Open"       => "Abierto",
-        "Assigned"   => "Asignado",
-        "InProgress" => "En progreso",
-        "Completed"  => "Completado",
-        "Cancelled"  => "Cancelado",
-        _            => status
-    };
+    public static string StatusBadge(string status) => StatusHelper.Badge(status);
+    public static string StatusLabel(string status) => StatusHelper.Label(status);
 }

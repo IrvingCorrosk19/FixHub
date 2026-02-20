@@ -1,5 +1,6 @@
 @page "{id:guid}"
 @model FixHub.Web.Pages.Jobs.DetailModel
+@using FixHub.Web.Helpers
 @{
     ViewData["Title"] = Model.Job?.Title ?? "Detalle del trabajo";
 }
@@ -11,226 +12,364 @@
 else
 {
     var job = Model.Job;
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card shadow-sm mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h3 class="mb-0">@job.Title</h3>
-                        <span class="badge fs-6 @FixHub.Web.Pages.Jobs.DetailModel.StatusBadge(job.Status)">@job.Status</span>
+    var progress = DetailPremiumHelper.ProgressPercent(job.Status);
+    var statusMsg = DetailPremiumHelper.StatusMessage(job.Status);
+    var isCancelled = DetailPremiumHelper.IsCancelled(job.Status);
+    var showTechCard = Model.IsOwner && Model.AssignedTechnicianProfile != null && (job.Status == "Assigned" || job.Status == "InProgress" || job.Status == "Completed");
+
+    <div class="fixhub-container py-4 fixhub-premium-wrapper">
+        @* ── VISTA PREMIUM CLIENTE (Owner) ── *@
+        @if (Model.IsOwner)
+        {
+                @* 1. Card técnico PRIMERO (arriba del pliegue, si asignado) ── *@
+            @if (showTechCard)
+            {
+                var tp = Model.AssignedTechnicianProfile!;
+                <div class="fixhub-premium-tech-card fixhub-animate-in" id="technicianCard">
+                    <div class="fixhub-premium-tech-header">
+                        <div class="fixhub-premium-tech-avatar">👷</div>
+                        <div class="fixhub-premium-tech-info">
+                            <div class="fixhub-premium-tech-name">@tp.FullName</div>
+                            <div class="fixhub-premium-tech-badges">
+                                <span class="fixhub-premium-badge">✓ Verificado</span>
+                                <span class="fixhub-premium-badge">✓ Antecedentes</span>
+                                <span class="fixhub-premium-badge">✓ Capacitado</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(tp.Phone))
+                            {
+                                <a href="tel:@tp.Phone" class="text-decoration-none fw-semibold" style="color: var(--fixhub-accent);">📞 @tp.Phone</a>
+                            }
+                        </div>
                     </div>
-                    <p class="text-muted small">
-                        <strong>Categoría:</strong> @job.CategoryName &nbsp;|&nbsp;
-                        @if (Model.IsOwner)
-                        {
-                            <strong>Tu solicitud</strong>
-                        }
-                        else
-                        {
-                            <strong>Publicado por:</strong> @job.CustomerName
-                        }
-                        &nbsp;|&nbsp; @job.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                    </p>
-                    <hr />
-                    <p>@job.Description</p>
-                    <p><strong>Dirección:</strong> @job.AddressText</p>
-                    @if (job.BudgetMin.HasValue || job.BudgetMax.HasValue)
-                    {
-                        <p>
-                            <strong>Presupuesto:</strong>
-                            $@(job.BudgetMin?.ToString("N2") ?? "?") — $@(job.BudgetMax?.ToString("N2") ?? "?")
-                        </p>
-                    }
+                    <div class="fixhub-premium-actions">
+                        <a asp-page="/Technicians/Profile" asp-route-id="@tp.UserId" class="btn btn-fixhub-outline btn-sm">Ver perfil</a>
+                        <button type="button" class="btn btn-outline-success btn-sm" disabled title="Próximamente">WhatsApp — Próximamente</button>
+                    </div>
                 </div>
-                <div class="card-footer d-flex gap-2 flex-wrap">
-                    @if (Model.IsCustomer && Model.IsOwner && (job.Status == "Assigned" || job.Status == "InProgress"))
-                    {
-                        <form method="post" asp-page-handler="Complete">
-                            <button type="submit" class="btn btn-success"
-                                    onclick="return confirm('¿Marcar este trabajo como completado?')">
-                                Marcar como completado
-                            </button>
-                        </form>
-                    }
-                    @if (Model.IsCustomer && Model.IsOwner && job.Status == "Completed" && !Model.HasReview)
-                    {
-                        <a asp-page="/Reviews/Create" asp-route-jobId="@job.Id"
-                           asp-route-technicianId="@Model.AssignedTechnicianId"
-                           class="btn btn-warning">Dejar reseña</a>
-                    }
-                    <a asp-page="@(Model.IsOwner ? "/Requests/My" : "/Jobs/Index")" class="btn btn-outline-secondary">Volver</a>
-                </div>
+            }
+
+            @* 2. Barra de progreso ── *@
+            <div class="fixhub-premium-progress @(isCancelled ? "fixhub-premium-progress-cancelled" : "")">
+                <div class="fixhub-premium-progress-bar" style="width: @progress%;" role="progressbar" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
 
-            @* Flujo cliente: mensaje de espera o técnico asignado *@
-            @if (Model.IsOwner)
+            @* 3. Mensaje de estado (copy calmante) ── *@
+            <div class="fixhub-premium-status-msg @(isCancelled ? "fixhub-premium-status-cancelled" : "")">
+                @statusMsg
+            </div>
+
+            @* 4. Mensaje de espera (Open sin técnico) ── *@
+            @if (Model.IsOwner && job.Status == "Open" && Model.AssignedTechnicianProfile == null)
             {
-                @if (job.Status == "Open" && (Model.Proposals == null || Model.Proposals.Count == 0))
-                {
-                    <div class="fixhub-trust-box mt-3">
-                        <p class="mb-0"><strong>Hemos recibido tu solicitud.</strong> FixHub te asignará un técnico y te contactaremos pronto.</p>
-                    </div>
-                }
-                else if ((job.Status == "Assigned" || job.Status == "InProgress") && Model.AssignedTechnicianProfile != null)
-                {
-                    var tp = Model.AssignedTechnicianProfile;
-                    <div class="fixhub-proposal-card-v2 mt-3">
-                        <div class="fixhub-proposal-card-v2-body">
-                            <h5 class="fixhub-section-title mb-2">Técnico asignado</h5>
-                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                                <strong class="fixhub-proposal-name-v2">@tp.FullName</strong>
-                                <span class="badge badge-verified">✔ Técnico FixHub verificado</span>
-                                <span class="badge badge-verified">✔ Antecedentes validados</span>
-                                <span class="badge badge-verified">✔ Capacitado por FixHub</span>
-                            </div>
-                            <p class="fixhub-rep-meta mb-0">@tp.Email @if (!string.IsNullOrEmpty(tp.Phone)) { <span>· @tp.Phone</span> }</p>
-                            <a asp-page="/Technicians/Profile" asp-route-id="@tp.UserId" class="btn btn-fixhub-outline btn-sm mt-2">Ver perfil del técnico</a>
+                <div class="fixhub-trust-box fixhub-trust-box-waiting mb-4 fixhub-animate-in">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="fixhub-spinner-icon">⏳</span>
+                        <div>
+                            <p class="mb-1 fw-semibold">Estamos coordinando tu técnico</p>
+                            <p class="mb-0 text-muted small">Te avisaremos cuando esté asignado. Tiempo estimado: 15 minutos.</p>
+                            <p class="mb-0 text-muted small mt-1">
+                                ¿Urgencia? <a href="mailto:soporte@fixhub.com">soporte@fixhub.com</a>
+                            </p>
                         </div>
-                    </div>
-                }
-            }
-
-            <!-- Proposals: solo Admin (no se muestra comparación al cliente) -->
-            @if (Model.CanSeeProposals && !Model.IsOwner && Model.Proposals is not null)
-            {
-                <h5 class="fixhub-section-title mb-3">Propuestas (@Model.Proposals.Count)</h5>
-                @if (Model.Proposals.Count == 0)
-                {
-                    <p class="text-muted">Aún no hay propuestas.</p>
-                }
-                else
-                {
-                    <div class="fixhub-proposals-list">
-                        @foreach (var p in Model.Proposals)
-                        {
-                            var profile = Model.TechnicianProfiles.GetValueOrDefault(p.TechnicianId);
-                            var rating = profile != null ? (double)profile.AvgRating : 0d;
-                            <div class="fixhub-proposal-card-v2">
-                                <div class="fixhub-proposal-card-v2-body">
-                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                                        <div class="fixhub-proposal-card-v2-left">
-                                            <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
-                                                <h6 class="fixhub-proposal-name-v2 mb-0">@p.TechnicianName</h6>
-                                                <span class="badge bg-light text-dark">@p.Status</span>
-                                                @if (profile?.IsVerified == true)
-                                                {
-                                                    <span class="badge badge-verified">✔ Técnico verificado</span>
-                                                }
-                                            </div>
-                                            @if (profile != null)
-                                            {
-                                                <div class="fixhub-proposal-rating-block mb-2">
-                                                    <span class="fixhub-proposal-rating-num">@profile.AvgRating.ToString("N1")</span>
-                                                    <span class="fixhub-stars fixhub-stars-lg"><partial name="_Stars" model="@rating" /></span>
-                                                </div>
-                                                <ul class="fixhub-proposal-trust-list">
-                                                    <li>✔ @profile.CompletedJobs trabajos completados</li>
-                                                    @if (profile.IsVerified)
-                                                    {
-                                                        <li>✔ Técnico verificado</li>
-                                                    }
-                                                </ul>
-                                            }
-                                        </div>
-                                        <div class="fixhub-proposal-price-block">
-                                            <span class="fixhub-proposal-price-label">Precio propuesto</span>
-                                            <span class="fixhub-proposal-price-value">$@p.Price.ToString("N0")</span>
-                                        </div>
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(p.Message))
-                                    {
-                                        <div class="fixhub-proposal-message">
-                                            <span class="fixhub-proposal-message-label">Mensaje del técnico</span>
-                                            <p class="fixhub-proposal-message-text">@p.Message</p>
-                                        </div>
-                                    }
-                                    <div class="fixhub-proposal-actions">
-                                        <a asp-page="/Technicians/Profile" asp-route-id="@p.TechnicianId"
-                                           class="btn btn-fixhub-outline btn-sm">Ver perfil</a>
-                                        @if ((Model.IsOwner || Model.IsAdmin) && p.Status == "Pending" && job.Status == "Open")
-                                        {
-                                            <form method="post" asp-page-handler="Accept" asp-route-proposalId="@p.Id" class="d-inline">
-                                                <button type="submit" class="btn btn-fixhub-primary btn-sm"
-                                                        onclick="return confirm('¿Aceptar la propuesta de @p.TechnicianName? El técnico quedará asignado al trabajo.')">
-                                                    Aceptar propuesta (asignar trabajo)
-                                                </button>
-                                            </form>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-
-                    @* FASE 2 — Sección de protección *@
-                    <div class="fixhub-trust-box mt-4">
-                        <h6 class="fixhub-trust-box-title">Tu seguridad al contratar</h6>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <div class="fixhub-trust-box-item">
-                                    <span class="fixhub-trust-box-icon">🔒</span>
-                                    <span class="fixhub-trust-box-text">Pago protegido por FixHub</span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="fixhub-trust-box-item">
-                                    <span class="fixhub-trust-box-icon">🛡</span>
-                                    <span class="fixhub-trust-box-text">Protección ante incidencias</span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="fixhub-trust-box-item">
-                                    <span class="fixhub-trust-box-icon">📞</span>
-                                    <span class="fixhub-trust-box-text">Soporte disponible</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-            }
-
-            <!-- Submit proposal form (Technician only, Open job) -->
-            @if (Model.IsTechnician && job.Status == "Open" && !Model.AlreadyProposed)
-            {
-                <div class="card shadow-sm mt-3">
-                    <div class="card-header bg-light">Enviar propuesta</div>
-                    <div class="card-body">
-                        @if (!string.IsNullOrEmpty(Model.ProposalError))
-                        {
-                            <div class="alert alert-danger">@Model.ProposalError</div>
-                        }
-                        <form method="post" asp-page-handler="SubmitProposal">
-                            <div class="row g-2">
-                                <div class="col-md-4">
-                                    <label class="form-label">Precio ($)</label>
-                                    <input asp-for="ProposalInput.Price" class="form-control" type="number" step="0.01" min="1" />
-                                    <span asp-validation-for="ProposalInput.Price" class="text-danger"></span>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Días estimados</label>
-                                    <input asp-for="ProposalInput.EstimatedDays" class="form-control" type="number" min="1" />
-                                    <span asp-validation-for="ProposalInput.EstimatedDays" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="mt-2">
-                                <label class="form-label">Carta de presentación</label>
-                                <textarea asp-for="ProposalInput.CoverLetter" class="form-control" rows="3"
-                                          placeholder="Describe tu experiencia y por qué eres el indicado..."></textarea>
-                                <span asp-validation-for="ProposalInput.CoverLetter" class="text-danger"></span>
-                            </div>
-                            <button type="submit" class="btn btn-primary mt-2">Enviar propuesta</button>
-                        </form>
                     </div>
                 </div>
             }
-            else if (Model.IsTechnician && Model.AlreadyProposed)
+
+            @* 5. Timeline real con timestamps ── *@
+            <h6 class="fixhub-section-title mt-4 mb-2">Seguimiento del servicio</h6>
+            <ul class="fixhub-premium-timeline">
+                <li class="fixhub-premium-timeline-item fixhub-premium-timeline-done">
+                    <span class="fixhub-premium-timeline-dot"></span>
+                    <div>
+                        <span class="fixhub-premium-timeline-label">Recibida</span>
+                        <span class="fixhub-premium-timeline-time" data-iso="@job.CreatedAt.ToString("o")">@DetailPremiumHelper.FormatTimestamp(job.CreatedAt)</span>
+                    </div>
+                </li>
+                <li class="fixhub-premium-timeline-item @(job.AssignedAt.HasValue ? "fixhub-premium-timeline-done" : "fixhub-premium-timeline-pending")">
+                    <span class="fixhub-premium-timeline-dot"></span>
+                    <div>
+                        <span class="fixhub-premium-timeline-label">Técnico asignado</span>
+                        <span class="fixhub-premium-timeline-time">@DetailPremiumHelper.FormatTimestamp(job.AssignedAt)</span>
+                    </div>
+                </li>
+                <li class="fixhub-premium-timeline-item @(job.StartedAt.HasValue ? "fixhub-premium-timeline-done" : "fixhub-premium-timeline-pending")">
+                    <span class="fixhub-premium-timeline-dot"></span>
+                    <div>
+                        <span class="fixhub-premium-timeline-label">En camino</span>
+                        <span class="fixhub-premium-timeline-time">@DetailPremiumHelper.FormatTimestamp(job.StartedAt)</span>
+                    </div>
+                </li>
+                <li class="fixhub-premium-timeline-item @(job.CompletedAt.HasValue || job.CancelledAt.HasValue ? "fixhub-premium-timeline-done" : "fixhub-premium-timeline-pending")">
+                    <span class="fixhub-premium-timeline-dot"></span>
+                    <div>
+                        <span class="fixhub-premium-timeline-label">@(job.CancelledAt.HasValue ? "Cancelada" : "Completada")</span>
+                        <span class="fixhub-premium-timeline-time">@DetailPremiumHelper.FormatTimestamp(job.CompletedAt ?? job.CancelledAt)</span>
+                    </div>
+                </li>
+            </ul>
+
+            @* 6. CTA Calificación (grande, post-servicio) ── *@
+            @if (Model.IsOwner && job.Status == "Completed" && !Model.HasReview)
             {
-                <div class="alert alert-info mt-3">Ya enviaste una propuesta para este trabajo.</div>
+                <div class="fixhub-premium-cta-rating">
+                    <div class="fixhub-premium-cta-rating-title">¿Cómo estuvo el servicio?</div>
+                    <div class="fixhub-premium-cta-rating-sub">Tu opinión nos ayuda a mejorar FixHub</div>
+                    <a asp-page="/Reviews/Create" asp-route-jobId="@job.Id" asp-route-technicianId="@Model.AssignedTechnicianId"
+                       class="btn btn-warning">⭐ Calificar servicio</a>
+                </div>
             }
+        }
+
+        @* ── CARD DETALLES (todos los roles) ── *@
+        <div class="fixhub-detail-card card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+                    <h3 class="fixhub-detail-title mb-0">@job.Title</h3>
+                    <span class="badge @StatusHelper.Badge(job.Status) fixhub-status-badge">@StatusHelper.Label(job.Status)</span>
+                </div>
+                <p class="text-muted small mb-2">
+                    <strong>@job.CategoryName</strong>
+                    @if (!Model.IsOwner)
+                    { <span> · @job.CustomerName</span> }
+                    · <time datetime="@job.CreatedAt.ToString("o")">@job.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time>
+                </p>
+                <hr />
+                <p class="fixhub-detail-desc">@job.Description</p>
+                <p class="mb-0"><strong>📍 Dirección:</strong> @job.AddressText</p>
+            </div>
+            <div class="card-footer fixhub-detail-footer">
+                @if (Model.IsCustomer && Model.IsOwner && (job.Status == "Assigned" || job.Status == "InProgress"))
+                {
+                    <button type="button" class="btn btn-success fixhub-btn-w100-mobile" data-bs-toggle="modal" data-bs-target="#modalCompleto">✓ Confirmar servicio completado</button>
+                }
+                @if (Model.IsCustomer && Model.IsOwner && (job.Status == "Open" || job.Status == "Assigned"))
+                {
+                    <button type="button" class="btn btn-outline-danger fixhub-btn-w100-mobile" data-bs-toggle="modal" data-bs-target="#modalCancelar">Cancelar servicio</button>
+                }
+                @if (Model.IsCustomer && Model.IsOwner && job.Status != "Cancelled" && job.Status != "Completed")
+                {
+                    <button type="button" class="btn btn-outline-secondary fixhub-btn-w100-mobile" data-bs-toggle="modal" data-bs-target="#modalReportar">⚠ Reportar problema</button>
+                }
+                <a asp-page="@(Model.IsOwner ? "/Requests/My" : "/Jobs/Index")" class="btn btn-outline-secondary fixhub-btn-w100-mobile">← Volver</a>
+            </div>
         </div>
+
+        @* ── PROPUESTAS: solo Admin ── *@
+        @if (Model.CanSeeProposals && Model.Proposals is not null)
+        {
+            <h5 class="fixhub-section-title mb-3 mt-4">Propuestas (@Model.Proposals.Count)</h5>
+            @if (Model.Proposals.Count == 0)
+            {
+                <p class="text-muted">Aún no hay propuestas.</p>
+            }
+            else
+            {
+                <div class="fixhub-proposals-list">
+                    @foreach (var p in Model.Proposals)
+                    {
+                        var profile = Model.TechnicianProfiles.GetValueOrDefault(p.TechnicianId);
+                        var rating = profile != null ? (double)profile.AvgRating : 0d;
+                        <div class="fixhub-proposal-card-v2">
+                            <div class="fixhub-proposal-card-v2-body">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                                    <div class="fixhub-proposal-card-v2-left">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                                            <h6 class="fixhub-proposal-name-v2 mb-0">@p.TechnicianName</h6>
+                                            <span class="badge bg-light text-dark">@p.Status</span>
+                                            @if (profile?.IsVerified == true) { <span class="badge badge-verified">✔ Verificado</span> }
+                                        </div>
+                                        @if (profile != null)
+                                        {
+                                            <div class="fixhub-proposal-rating-block mb-2">
+                                                <span class="fixhub-proposal-rating-num">@profile.AvgRating.ToString("N1")</span>
+                                                <span class="fixhub-stars fixhub-stars-lg"><partial name="_Stars" model="@rating" /></span>
+                                            </div>
+                                            <ul class="fixhub-proposal-trust-list">
+                                                <li>✔ @profile.CompletedJobs trabajos completados</li>
+                                                @if (profile.IsVerified) { <li>✔ Técnico verificado por FixHub</li> }
+                                            </ul>
+                                        }
+                                    </div>
+                                    <div class="fixhub-proposal-price-block">
+                                        <span class="fixhub-proposal-price-label">Precio propuesto</span>
+                                        <span class="fixhub-proposal-price-value">$@p.Price.ToString("N0")</span>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(p.Message))
+                                {
+                                    <div class="fixhub-proposal-message">
+                                        <span class="fixhub-proposal-message-label">Nota del técnico</span>
+                                        <p class="fixhub-proposal-message-text">@p.Message</p>
+                                    </div>
+                                }
+                                <div class="fixhub-proposal-actions">
+                                    <a asp-page="/Technicians/Profile" asp-route-id="@p.TechnicianId" class="btn btn-fixhub-outline btn-sm">Ver perfil</a>
+                                    @if (Model.IsAdmin && p.Status == "Pending" && job.Status == "Open")
+                                    {
+                                        <form method="post" asp-page-handler="Accept" asp-route-proposalId="@p.Id" class="d-inline">
+                                            <button type="submit" class="btn btn-fixhub-primary btn-sm" onclick="return confirm('¿Asignar a @p.TechnicianName?')">Asignar técnico</button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="fixhub-trust-box mt-4">
+                    <h6 class="fixhub-trust-box-title">Garantía FixHub</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4"><div class="fixhub-trust-box-item"><span class="fixhub-trust-box-icon">🔒</span><span class="fixhub-trust-box-text">Pago protegido</span></div></div>
+                        <div class="col-md-4"><div class="fixhub-trust-box-item"><span class="fixhub-trust-box-icon">🛡️</span><span class="fixhub-trust-box-text">Protección ante incidencias</span></div></div>
+                        <div class="col-md-4"><div class="fixhub-trust-box-item"><span class="fixhub-trust-box-icon">📞</span><span class="fixhub-trust-box-text">Soporte disponible</span></div></div>
+                    </div>
+                </div>
+            }
+        }
+
+        @if (Model.IsTechnician)
+        {
+            <div class="alert alert-info mt-3">FixHub gestiona las asignaciones. Los trabajos son asignados por el equipo.</div>
+        }
+
+        @* ── Soporte ── *@
+        @if (Model.IsOwner)
+        {
+            <div class="fixhub-support-block mt-4">
+                <div class="fixhub-support-block-header"><span class="fixhub-support-icon">🛟</span><strong>¿Necesitas ayuda?</strong></div>
+                <p class="fixhub-support-block-text">Lunes a viernes, 8:00–20:00 h.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="mailto:soporte@fixhub.com" class="btn btn-sm btn-fixhub-outline fixhub-btn-w100-mobile">✉ soporte@fixhub.com</a>
+                    <a href="tel:+56912345678" class="btn btn-sm btn-fixhub-outline fixhub-btn-w100-mobile">📞 +56 9 1234 5678</a>
+                </div>
+            </div>
+        }
     </div>
+
+    @* ── MODALES ── *@
+    @if (Model.IsCustomer && Model.IsOwner && (job.Status == "Assigned" || job.Status == "InProgress"))
+    {
+        <div class="modal fade" id="modalCompleto" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-0"><h5 class="modal-title">¿Confirmar servicio completado?</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                    <div class="modal-body pt-2">
+                        <p class="text-muted">Confirma que el técnico realizó el servicio correctamente. No se puede deshacer.</p>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <form method="post" asp-page-handler="Complete" class="d-inline" id="formComplete">
+                            <button type="submit" class="btn btn-success" id="btnConfirmarCompleto">Sí, confirmar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.IsCustomer && Model.IsOwner && (job.Status == "Open" || job.Status == "Assigned"))
+    {
+        <div class="modal fade" id="modalCancelar" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-0"><h5 class="modal-title">¿Cancelar servicio?</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                    <div class="modal-body pt-2">
+                        <p class="text-muted">¿Estás seguro de cancelar esta solicitud?</p>
+                        @if (job.Status == "Assigned") { <div class="alert alert-warning py-2 mb-2"><small>Ya tienes técnico asignado. Será notificado.</small></div> }
+                        <p class="text-muted small mb-0">No se puede deshacer.</p>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Mantener solicitud</button>
+                        <form method="post" asp-page-handler="Cancel" class="d-inline" id="formCancel">
+                            <button type="submit" class="btn btn-danger" id="btnConfirmarCancelar">Sí, cancelar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.IsCustomer && Model.IsOwner && job.Status != "Cancelled" && job.Status != "Completed")
+    {
+        <div class="modal fade" id="modalReportar" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post" asp-page-handler="ReportIssue" id="formReportIssue">
+                        <div class="modal-header border-0 pb-0"><h5 class="modal-title">⚠ Reportar problema</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                        <div class="modal-body pt-2">
+                            <p class="text-muted small mb-3">Cuéntanos qué está pasando para ayudarte.</p>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">¿Cuál es el problema?</label>
+                                <div class="d-flex flex-column gap-2" id="issueReasonGroup">
+                                    <label class="fixhub-radio-option"><input type="radio" name="IssueReason" value="no_contact" class="me-2"> El técnico no se ha comunicado</label>
+                                    <label class="fixhub-radio-option"><input type="radio" name="IssueReason" value="late" class="me-2"> El técnico lleva mucho retraso</label>
+                                    <label class="fixhub-radio-option"><input type="radio" name="IssueReason" value="bad_service" class="me-2"> El servicio no se realizó correctamente</label>
+                                    <label class="fixhub-radio-option"><input type="radio" name="IssueReason" value="other" class="me-2"> Otro</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Detalle adicional <span class="text-muted fw-normal">(opcional)</span></label>
+                                <textarea class="form-control" name="IssueDetail" rows="3" maxlength="500" placeholder="Describe brevemente..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            <button type="submit" class="btn btn-fixhub-primary" id="btnEnviarReporte">Enviar reporte</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script>
+    (function () {
+        'use strict';
+        function initLoading(formId, btnId) {
+            var form = document.getElementById(formId);
+            if (!form) return;
+            form.addEventListener('submit', function () {
+                var btn = document.getElementById(btnId);
+                if (btn) { btn.classList.add('btn-loading', 'fixhub-premium-btn-loading'); btn.disabled = true; }
+            });
+        }
+        initLoading('formComplete', 'btnConfirmarCompleto');
+        initLoading('formCancel', 'btnConfirmarCancelar');
+        var formReport = document.getElementById('formReportIssue');
+        if (formReport) {
+            formReport.addEventListener('submit', function (e) {
+                if (!formReport.querySelector('input[name="IssueReason"]:checked')) {
+                    e.preventDefault();
+                    var g = document.getElementById('issueReasonGroup');
+                    if (g) { g.style.outline = '2px solid #DC2626'; g.style.borderRadius = '6px'; setTimeout(function () { g.style.outline = ''; }, 2000); }
+                    return;
+                }
+                var btn = document.getElementById('btnEnviarReporte');
+                if (btn) { btn.classList.add('btn-loading', 'fixhub-premium-btn-loading'); btn.disabled = true; }
+            });
+        }
+        function relativeTime(isoStr) {
+            var d = new Date(isoStr);
+            var diff = (Date.now() - d.getTime()) / 1000;
+            if (diff < 60) return 'hace un momento';
+            if (diff < 3600) return 'hace ' + Math.floor(diff / 60) + ' min';
+            if (diff < 86400) return 'hace ' + Math.floor(diff / 3600) + ' h';
+            if (diff < 604800) return 'hace ' + Math.floor(diff / 86400) + ' días';
+            return d.toLocaleDateString('es-ES');
+        }
+        document.querySelectorAll('.fixhub-premium-timeline-time[data-iso]').forEach(function (el) {
+            var iso = el.getAttribute('data-iso');
+            if (iso) {
+                function refresh() {
+                    var d = new Date(iso);
+                    var timeStr = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+                    el.textContent = timeStr + ' · ' + relativeTime(iso);
+                }
+                refresh();
+                setInterval(refresh, 30000);
+            }
+        });
+    })();
+    </script>
 }

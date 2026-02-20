@@ -1,4 +1,5 @@
 using FixHub.API.Extensions;
+using FixHub.Application.Features.Admin;
 using FixHub.Application.Features.Jobs;
 using FixHub.Application.Features.Proposals;
 using FixHub.Domain.Enums;
@@ -35,19 +36,21 @@ public class JobsController(ISender mediator) : ApiControllerBase
         return result.ToActionResult(this, successStatusCode: 201);
     }
 
-    /// <summary>Get a specific job by ID.</summary>
+    /// <summary>Get a specific job by ID. [Customer: own only | Technician: assigned/open/has proposal | Admin: all]</summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(JobDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
-        var result = await mediator.Send(new GetJobQuery(id), ct);
+        var result = await mediator.Send(new GetJobQuery(id, CurrentUserId, CurrentUserRole), ct);
         return result.ToActionResult(this);
     }
 
-    /// <summary>List jobs with optional filters and pagination.</summary>
+    /// <summary>List jobs with optional filters and pagination. [Technician/Admin only — Customer must use GET /mine]</summary>
     [HttpGet]
     [ProducesResponseType(typeof(FixHub.Application.Common.Models.PagedResult<JobDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> List(
         [FromQuery] JobStatus? status,
         [FromQuery] int? categoryId,
@@ -55,6 +58,14 @@ public class JobsController(ISender mediator) : ApiControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
+        if (CurrentUserRole == "Customer")
+            return StatusCode(403, new ProblemDetails
+            {
+                Title = "Customers must use GET /api/v1/jobs/mine to list their requests.",
+                Status = 403,
+                Instance = HttpContext.Request.Path,
+                Extensions = { ["errorCode"] = "FORBIDDEN" }
+            });
         var result = await mediator.Send(new ListJobsQuery(status, categoryId, page, pageSize), ct);
         return result.ToActionResult(this);
     }
@@ -109,6 +120,32 @@ public class JobsController(ISender mediator) : ApiControllerBase
         var result = await mediator.Send(new CompleteJobCommand(id, CurrentUserId), ct);
         return result.ToActionResult(this);
     }
+
+    /// <summary>Cancel a job. [Customer only — own job, only before InProgress]</summary>
+    [HttpPost("{id:guid}/cancel")]
+    [Authorize(Policy = "CustomerOnly")]
+    [ProducesResponseType(typeof(JobDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
+    {
+        var result = await mediator.Send(new CancelJobCommand(id, CurrentUserId), ct);
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>Report an issue on a job. [Customer (own job) or Admin]</summary>
+    [HttpPost("{id:guid}/issues")]
+    [ProducesResponseType(typeof(IssueDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ReportIssue(
+        Guid id,
+        [FromBody] ReportIssueRequest request,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(
+            new ReportJobIssueCommand(id, CurrentUserId, IsAdmin, request.Reason, request.Detail), ct);
+        return result.ToActionResult(this, successStatusCode: 201);
+    }
 }
 
 // ─── Request DTOs ─────────────────────────────────────────────────────────────
@@ -124,3 +161,5 @@ public record CreateJobRequest(
 );
 
 public record SubmitProposalRequest(decimal Price, string? Message);
+
+public record ReportIssueRequest(string Reason, string? Detail);

@@ -48,6 +48,12 @@ public class FixHubApiClient(HttpClient http) : IFixHubApiClient
     public Task<ApiResult<JobDto>> CompleteJobAsync(Guid jobId) =>
         PostAsync<JobDto>($"api/v1/jobs/{jobId}/complete", null);
 
+    public Task<ApiResult<JobDto>> CancelJobAsync(Guid jobId) =>
+        PostAsync<JobDto>($"api/v1/jobs/{jobId}/cancel", null);
+
+    public Task<ApiResult<IssueDto>> ReportJobIssueAsync(Guid jobId, string reason, string? detail) =>
+        PostAsync<IssueDto>($"api/v1/jobs/{jobId}/issues", new ReportIssueRequest(reason, detail));
+
     // ─── Proposals ────────────────────────────────────────────────────────────
     public Task<ApiResult<ProposalDto>> SubmitProposalAsync(Guid jobId, SubmitProposalRequest request) =>
         PostAsync<ProposalDto>($"api/v1/jobs/{jobId}/proposals", request);
@@ -79,6 +85,28 @@ public class FixHubApiClient(HttpClient http) : IFixHubApiClient
 
     public Task<ApiResult<object>> UpdateTechnicianStatusAsync(Guid technicianId, int status) =>
         PatchAsync<object>($"api/v1/admin/technicians/{technicianId}/status", new { Status = status });
+
+    public Task<ApiResult<PagedResult<IssueDto>>> ListJobIssuesAsync(int page, int pageSize) =>
+        GetAsync<PagedResult<IssueDto>>($"api/v1/admin/issues?page={page}&pageSize={pageSize}");
+
+    public Task<ApiResult<OpsDashboardDto>> GetAdminDashboardAsync() =>
+        GetAsync<OpsDashboardDto>("api/v1/admin/dashboard");
+
+    public Task<ApiResult<JobDto>> AdminStartJobAsync(Guid jobId) =>
+        PostAsync<JobDto>($"api/v1/admin/jobs/{jobId}/start");
+
+    public Task<ApiResult<JobDto>> AdminUpdateJobStatusAsync(Guid jobId, string newStatus) =>
+        PatchAsync<JobDto>($"api/v1/admin/jobs/{jobId}/status", new { NewStatus = newStatus });
+
+    // ─── Notifications ────────────────────────────────────────────────────────
+    public Task<ApiResult<PagedResult<NotificationDto>>> GetNotificationsAsync(int page, int pageSize) =>
+        GetAsync<PagedResult<NotificationDto>>($"api/v1/notifications?page={page}&pageSize={pageSize}");
+
+    public Task<ApiResult<int>> GetUnreadCountAsync() =>
+        GetAsync<int>("api/v1/notifications/unread-count");
+
+    public Task<ApiResult<object>> MarkNotificationReadAsync(Guid notificationId) =>
+        PostAsync<object>($"api/v1/notifications/{notificationId}/read", null);
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
     private async Task<ApiResult<T>> GetAsync<T>(string url)

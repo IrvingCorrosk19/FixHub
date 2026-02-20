@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+using FixHub.Web.Helpers;
 using FixHub.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,40 +14,39 @@ public class DetailModel(IFixHubApiClient apiClient) : PageModel
     public Dictionary<Guid, TechnicianProfileDto> TechnicianProfiles { get; set; } = new();
     /// <summary>Técnico asignado al trabajo (para mostrar al cliente cuando ya está asignado).</summary>
     public TechnicianProfileDto? AssignedTechnicianProfile { get; set; }
-    public string? ProposalError { get; set; }
-    public bool AlreadyProposed { get; set; }
     public bool HasReview { get; set; }
     public Guid? AssignedTechnicianId { get; set; }
+
+    // Datos del formulario "Reportar problema"
+    [BindProperty] public string IssueReason { get; set; } = string.Empty;
+    [BindProperty] public string? IssueDetail { get; set; }
 
     public bool IsCustomer => SessionUser.IsCustomer(User);
     public bool IsTechnician => SessionUser.IsTechnician(User);
     public bool IsAdmin => SessionUser.GetRole(User) == "Admin";
     public bool IsOwner => Job?.CustomerId == SessionUser.GetUserId(User);
-    public bool CanSeeProposals => IsOwner || IsAdmin;
+    /// <summary>Solo Admin ve la lista de propuestas y puede aceptar (empresa, no marketplace).</summary>
+    public bool CanSeeProposals => IsAdmin;
 
-    [BindProperty]
-    public ProposalInputModel ProposalInput { get; set; } = new();
+    /// <summary>
+    /// Tiempo relativo "hace X minutos" calculado desde CreatedAt del job.
+    /// Se usa en la vista para mostrar cuándo fue creada la solicitud.
+    /// </summary>
+    public string CreatedAgo => RelativeTime(Job?.CreatedAt ?? DateTime.UtcNow);
 
-    public class ProposalInputModel
+    /// <summary>ISO 8601 de CreatedAt para el atributo data- del stepper (JS lo usa para animación).</summary>
+    public string CreatedAtIso => (Job?.CreatedAt ?? DateTime.UtcNow).ToString("o");
+
+    /// <summary>Tiempo relativo legible.</summary>
+    public static string RelativeTime(DateTime utcTime)
     {
-        [Required, Range(1, 999999)]
-        public decimal Price { get; set; }
-
-        [Required, Range(1, 365)]
-        public int EstimatedDays { get; set; } = 1;
-
-        [Required, MaxLength(1000)]
-        public string CoverLetter { get; set; } = string.Empty;
+        var diff = DateTime.UtcNow - utcTime;
+        return diff.TotalSeconds < 60  ? "hace un momento"
+             : diff.TotalMinutes < 60  ? $"hace {(int)diff.TotalMinutes} min"
+             : diff.TotalHours < 24    ? $"hace {(int)diff.TotalHours} h"
+             : diff.TotalDays < 7      ? $"hace {(int)diff.TotalDays} días"
+             : utcTime.ToLocalTime().ToString("dd/MM/yyyy");
     }
-
-    public static string StatusBadge(string status) => status switch
-    {
-        "Open" => "bg-success",
-        "Assigned" => "bg-primary",
-        "InProgress" => "bg-warning text-dark",
-        "Completed" => "bg-secondary",
-        _ => "bg-light text-dark"
-    };
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
@@ -55,36 +54,44 @@ public class DetailModel(IFixHubApiClient apiClient) : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostSubmitProposalAsync(Guid id)
-    {
-        if (!ModelState.IsValid)
-        {
-            await LoadJobAsync(id);
-            return Page();
-        }
-
-        var result = await apiClient.SubmitProposalAsync(id,
-            new SubmitProposalRequest(ProposalInput.Price, ProposalInput.CoverLetter));
-
-        if (!result.IsSuccess)
-        {
-            ProposalError = result.ErrorMessage ?? "Error al enviar la propuesta.";
-            await LoadJobAsync(id);
-            return Page();
-        }
-
-        TempData["Success"] = "Propuesta enviada correctamente.";
-        return RedirectToPage(new { id });
-    }
-
     public async Task<IActionResult> OnPostCompleteAsync(Guid id)
     {
         var result = await apiClient.CompleteJobAsync(id);
 
         if (!result.IsSuccess)
-            TempData["Error"] = result.ErrorMessage ?? "Error al completar el trabajo.";
+            TempData["Error"] = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
         else
-            TempData["Success"] = "Trabajo marcado como completado.";
+            TempData["Success"] = "✅ Servicio confirmado. ¡Gracias por usar FixHub!";
+
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostCancelAsync(Guid id)
+    {
+        var result = await apiClient.CancelJobAsync(id);
+
+        if (!result.IsSuccess)
+            TempData["Error"] = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
+        else
+            TempData["Success"] = "Solicitud cancelada correctamente.";
+
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostReportIssueAsync(Guid id)
+    {
+        if (string.IsNullOrWhiteSpace(IssueReason))
+        {
+            TempData["Error"] = "Por favor selecciona el tipo de problema.";
+            return RedirectToPage(new { id });
+        }
+
+        var result = await apiClient.ReportJobIssueAsync(id, IssueReason, IssueDetail);
+
+        if (!result.IsSuccess)
+            TempData["Error"] = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
+        else
+            TempData["Success"] = "✅ Reporte enviado. Nuestro equipo se comunicará contigo a la brevedad.";
 
         return RedirectToPage(new { id });
     }
@@ -96,7 +103,7 @@ public class DetailModel(IFixHubApiClient apiClient) : PageModel
         if (!result.IsSuccess)
             TempData["Error"] = result.ErrorMessage ?? "Error al aceptar la propuesta.";
         else
-            TempData["Success"] = $"Propuesta de {result.Value?.TechnicianName} aceptada.";
+            TempData["Success"] = $"✅ Técnico {result.Value?.TechnicianName} asignado correctamente.";
 
         return RedirectToPage(new { id });
     }
@@ -104,8 +111,21 @@ public class DetailModel(IFixHubApiClient apiClient) : PageModel
     private async Task LoadJobAsync(Guid id)
     {
         var jobResult = await apiClient.GetJobAsync(id);
-        if (!jobResult.IsSuccess) return;
+        if (!jobResult.IsSuccess || jobResult.Value is null)
+        {
+            TempData["Error"] = ErrorMessageHelper.GetUserFriendlyMessage(jobResult.ErrorMessage, jobResult.StatusCode);
+            return;
+        }
         Job = jobResult.Value;
+
+        // Cargar perfil del técnico asignado (visible al cliente y admin).
+        if (Job.AssignedTechnicianId.HasValue)
+        {
+            AssignedTechnicianId = Job.AssignedTechnicianId;
+            var profileResult = await apiClient.GetTechnicianProfileAsync(Job.AssignedTechnicianId.Value);
+            if (profileResult.IsSuccess && profileResult.Value != null)
+                AssignedTechnicianProfile = profileResult.Value;
+        }
 
         if (CanSeeProposals)
         {
@@ -113,38 +133,17 @@ public class DetailModel(IFixHubApiClient apiClient) : PageModel
             if (propsResult.IsSuccess)
             {
                 Proposals = propsResult.Value;
-                var currentUserId = SessionUser.GetUserId(User);
-                AlreadyProposed = Proposals?.Any(p => p.TechnicianId == currentUserId) ?? false;
-
-                var accepted = Proposals?.FirstOrDefault(p => p.Status == "Accepted");
-                AssignedTechnicianId = accepted?.TechnicianId;
-                HasReview = false;
-            }
-
-            if (AssignedTechnicianId.HasValue)
-            {
-                var profileResult = await apiClient.GetTechnicianProfileAsync(AssignedTechnicianId.Value);
-                if (profileResult.IsSuccess && profileResult.Value != null)
-                    AssignedTechnicianProfile = profileResult.Value;
-            }
-
-            foreach (var techId in Proposals?.Select(p => p.TechnicianId).Distinct() ?? [])
-            {
-                var profileResult = await apiClient.GetTechnicianProfileAsync(techId);
-                if (profileResult.IsSuccess && profileResult.Value != null)
-                    TechnicianProfiles[techId] = profileResult.Value;
-            }
-        }
-        else if (IsTechnician)
-        {
-            // Technician checks if they already proposed via their own assignments
-            var propsResult = await apiClient.GetJobProposalsAsync(id);
-            if (propsResult.IsSuccess)
-            {
-                var currentUserId = SessionUser.GetUserId(User);
-                AlreadyProposed = propsResult.Value?.Any(p => p.TechnicianId == currentUserId) ?? false;
-                Proposals = propsResult.Value?.Where(p => p.TechnicianId == currentUserId).ToList();
+                foreach (var techId in Proposals?.Select(p => p.TechnicianId).Distinct() ?? [])
+                {
+                    var profileResult = await apiClient.GetTechnicianProfileAsync(techId);
+                    if (profileResult.IsSuccess && profileResult.Value != null)
+                        TechnicianProfiles[techId] = profileResult.Value;
+                }
             }
         }
     }
+
+    // Delegados al helper centralizado para uso en la vista.
+    public static string StatusLabel(string status) => StatusHelper.Label(status);
+    public static string StatusBadge(string status) => StatusHelper.Badge(status);
 }

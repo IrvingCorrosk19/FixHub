@@ -1,3 +1,4 @@
+using FixHub.Web.Helpers;
 using FixHub.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -47,7 +48,7 @@ public class IndexModel(IFixHubApiClient apiClient, ILogger<IndexModel> logger) 
         if (result.IsSuccess)
             Jobs = result.Value;
         else
-            ErrorMessage = result.ErrorMessage;
+            ErrorMessage = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
         return Page();
     }
 
@@ -67,7 +68,7 @@ public class IndexModel(IFixHubApiClient apiClient, ILogger<IndexModel> logger) 
         else if (!openResult.IsSuccess)
         {
             logger.LogWarning("Jobs/Index (Technician): fallo al cargar oportunidades. Mensaje: {Message}", openResult.ErrorMessage);
-            ErrorMessage = openResult.ErrorMessage ?? "No se pudieron cargar las oportunidades. Comprueba que la API esté en ejecución.";
+            ErrorMessage = ErrorMessageHelper.GetUserFriendlyMessage(openResult.ErrorMessage, openResult.StatusCode);
         }
 
         if (assignResult.IsSuccess && assignResult.Value != null)
@@ -80,30 +81,13 @@ public class IndexModel(IFixHubApiClient apiClient, ILogger<IndexModel> logger) 
             KpiEarnings = CompletedList.Sum(a => a.AcceptedPrice);
         }
         else if (!assignResult.IsSuccess)
-            ErrorMessage = assignResult.ErrorMessage;
+            ErrorMessage = ErrorMessageHelper.GetUserFriendlyMessage(assignResult.ErrorMessage, assignResult.StatusCode);
 
         var profileResult = await apiClient.GetTechnicianProfileAsync(SessionUser.GetUserId(User));
         if (profileResult.IsSuccess)
             MyProfile = profileResult.Value;
     }
 
-    public static string StatusBadge(string status) => status switch
-    {
-        "Open" => "bg-success",
-        "Assigned" => "bg-primary",
-        "InProgress" => "bg-warning text-dark",
-        "Completed" => "bg-secondary",
-        "Cancelled" => "bg-danger",
-        _ => "bg-light text-dark"
-    };
-
-    public static string StatusLabel(string status) => status switch
-    {
-        "Open" => "Abierto",
-        "Assigned" => "Asignado",
-        "InProgress" => "En progreso",
-        "Completed" => "Completado",
-        "Cancelled" => "Cancelado",
-        _ => status
-    };
+    public static string StatusBadge(string status) => StatusHelper.Badge(status);
+    public static string StatusLabel(string status) => StatusHelper.Label(status);
 }

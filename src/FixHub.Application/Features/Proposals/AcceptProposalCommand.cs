@@ -1,4 +1,5 @@
 using FixHub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
 using FixHub.Application.Common.Models;
 using FixHub.Domain.Entities;
 using FixHub.Domain.Enums;
@@ -22,7 +23,7 @@ public record AcceptProposalResponse(
 );
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
-public class AcceptProposalCommandHandler(IApplicationDbContext db)
+public class AcceptProposalCommandHandler(IApplicationDbContext db, ILogger<AcceptProposalCommandHandler> logger, INotificationService notifications)
     : IRequestHandler<AcceptProposalCommand, Result<AcceptProposalResponse>>
 {
     public async Task<Result<AcceptProposalResponse>> Handle(
@@ -36,9 +37,10 @@ public class AcceptProposalCommandHandler(IApplicationDbContext db)
         if (proposal is null)
             return Result<AcceptProposalResponse>.Failure("Proposal not found.", "PROPOSAL_NOT_FOUND");
 
-        if (!req.AcceptAsAdmin && proposal.Job.CustomerId != req.AcceptedByUserId)
+        // FixHub es empresa: solo Admin puede aceptar propuestas (asignar técnico).
+        if (!req.AcceptAsAdmin)
             return Result<AcceptProposalResponse>.Failure(
-                "Solo el dueño del trabajo o un administrador pueden aceptar propuestas.", "FORBIDDEN");
+                "Solo un administrador puede asignar técnicos a las solicitudes.", "FORBIDDEN");
 
         if (proposal.Status != ProposalStatus.Pending)
             return Result<AcceptProposalResponse>.Failure(
@@ -84,8 +86,16 @@ public class AcceptProposalCommandHandler(IApplicationDbContext db)
 
         // Cambiar status del Job a Assigned
         proposal.Job.Status = JobStatus.Assigned;
+        proposal.Job.AssignedAt = now;
 
         await db.SaveChangesAsync(ct);
+        logger.LogInformation("Job status changed. JobId={JobId} StatusBefore=Open StatusAfter=Assigned",
+            proposal.JobId);
+
+        await notifications.NotifyAsync(proposal.Job.CustomerId, NotificationType.JobAssigned,
+            "Un técnico ha sido asignado a tu solicitud.", proposal.JobId, ct);
+        await notifications.NotifyAsync(proposal.TechnicianId, NotificationType.JobAssigned,
+            $"Has sido asignado a: {proposal.Job.Title}", proposal.JobId, ct);
 
         return Result<AcceptProposalResponse>.Success(new AcceptProposalResponse(
             assignment.Id,

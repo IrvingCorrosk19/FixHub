@@ -89,6 +89,103 @@ public class ApiIntegrationTests : IClassFixture<FixHubApiFixture>
         Assert.Equal(HttpStatusCode.Forbidden, createResp.StatusCode);
     }
 
+    // ─── FASE 9: Tests de autorización ────────────────────────────────────────
+
+    [Fact]
+    public async Task Customer_Cannot_View_Other_Customers_Job_Returns_403()
+    {
+        var cust1 = $"cust1-{Guid.NewGuid():N}@test.local";
+        var cust2 = $"cust2-{Guid.NewGuid():N}@test.local";
+        await Register(cust1, "Password1!", UserRole.Customer);
+        await Register(cust2, "Password1!", UserRole.Customer);
+
+        var token1 = await Login(cust1, "Password1!");
+        var token2 = await Login(cust2, "Password1!");
+
+        var jobId = await CreateJob(token1, "Job from cust1", "Description", "123 Main St", 100m, 200m);
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/jobs/{jobId}");
+        request.Headers.Add("Authorization", "Bearer " + token2);
+        var resp = await Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Technician_Cannot_View_Unassigned_Job_Returns_403()
+    {
+        var cust = $"cust-{Guid.NewGuid():N}@test.local";
+        var tech1 = $"tech1-{Guid.NewGuid():N}@test.local";
+        var tech2 = $"tech2-{Guid.NewGuid():N}@test.local";
+        await Register(cust, "Password1!", UserRole.Customer);
+        await Register(tech1, "Password1!", UserRole.Technician);
+        await Register(tech2, "Password1!", UserRole.Technician);
+
+        var custToken = await Login(cust, "Password1!");
+        var tech1Token = await Login(tech1, "Password1!");
+        var tech2Token = await Login(tech2, "Password1!");
+
+        var jobId = await CreateJob(custToken, "Job for tech1", "Description", "123 Main St", 100m, 200m);
+        await SubmitProposal(tech1Token, jobId, 150m);
+
+        var adminToken = await LoginAdmin();
+        var proposalId = await GetFirstProposalId(adminToken, jobId);
+        await AcceptProposal(adminToken, proposalId);
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/jobs/{jobId}");
+        request.Headers.Add("Authorization", "Bearer " + tech2Token);
+        var resp = await Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Customer_Cannot_Use_Get_Jobs_Returns_403()
+    {
+        var cust = $"cust-{Guid.NewGuid():N}@test.local";
+        await Register(cust, "Password1!", UserRole.Customer);
+        var token = await Login(cust, "Password1!");
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/jobs?page=1&pageSize=10");
+        request.Headers.Add("Authorization", "Bearer " + token);
+        var resp = await Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task CancelJob_InvalidStatus_Returns_400_With_ErrorCode()
+    {
+        var cust = $"cust-{Guid.NewGuid():N}@test.local";
+        await Register(cust, "Password1!", UserRole.Customer);
+        var token = await Login(cust, "Password1!");
+
+        var jobId = await CreateJob(token, "Job to complete", "Desc", "123 St", 100m, 200m);
+        var adminToken = await LoginAdmin();
+        await AdminUpdateJobStatus(adminToken, jobId, "InProgress");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/jobs/{jobId}/cancel");
+        request.Headers.Add("Authorization", "Bearer " + token);
+        request.Content = null;
+        var resp = await Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var json = await resp.Content.ReadAsStringAsync();
+        Assert.Contains("errorCode", json);
+        Assert.Contains("INVALID_STATUS", json);
+    }
+
+    [Fact]
+    public async Task ReportJobIssue_InvalidReason_Returns_400()
+    {
+        var cust = $"cust-{Guid.NewGuid():N}@test.local";
+        await Register(cust, "Password1!", UserRole.Customer);
+        var token = await Login(cust, "Password1!");
+        var jobId = await CreateJob(token, "Job", "Desc", "123 St", 100m, 200m);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/jobs/{jobId}/issues");
+        request.Headers.Add("Authorization", "Bearer " + token);
+        request.Content = JsonContent.Create(new { reason = "invalid_reason", detail = (string?)null });
+        var resp = await Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
     [Fact]
     public async Task Happy_Path_Job_Proposal_Accept_Complete_Review()
     {
@@ -100,10 +197,11 @@ public class ApiIntegrationTests : IClassFixture<FixHubApiFixture>
 
         var customerToken = await Login(customerEmail, "Password1!");
         var techToken = await Login(techEmail, "Password1!");
+        var adminToken = await LoginAdmin();
 
         var jobId = await CreateJob(customerToken, "Plumbing job", "Fix sink", "123 Main St", 100m, 200m);
         var proposalId = await SubmitProposal(techToken, jobId, 150m);
-        await AcceptProposal(customerToken, proposalId);
+        await AcceptProposal(adminToken, proposalId);
         await CompleteJob(customerToken, jobId);
         await CreateReview(customerToken, jobId, 5, "Great work!");
     }
@@ -183,6 +281,34 @@ public class ApiIntegrationTests : IClassFixture<FixHubApiFixture>
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/reviews");
         request.Headers.Add("Authorization", "Bearer " + bearerToken);
         request.Content = JsonContent.Create(new { jobId, stars, comment });
+        var resp = await Client.SendAsync(request);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    private async Task<string> LoginAdmin()
+    {
+        var resp = await Client.PostAsJsonAsync("/api/v1/auth/login",
+            new { email = "admin@fixhub.com", password = "Admin123!" });
+        resp.EnsureSuccessStatusCode();
+        var data = await resp.Content.ReadFromJsonAsync<AuthResponse>();
+        return data!.Token;
+    }
+
+    private async Task<Guid> GetFirstProposalId(string adminToken, Guid jobId)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/jobs/{jobId}/proposals");
+        request.Headers.Add("Authorization", "Bearer " + adminToken);
+        var resp = await Client.SendAsync(request);
+        resp.EnsureSuccessStatusCode();
+        var list = await resp.Content.ReadFromJsonAsync<List<ProposalDto>>();
+        return list!.First().Id;
+    }
+
+    private async Task AdminUpdateJobStatus(string adminToken, Guid jobId, string newStatus)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/v1/admin/jobs/{jobId}/status");
+        request.Headers.Add("Authorization", "Bearer " + adminToken);
+        request.Content = JsonContent.Create(new { newStatus });
         var resp = await Client.SendAsync(request);
         resp.EnsureSuccessStatusCode();
     }

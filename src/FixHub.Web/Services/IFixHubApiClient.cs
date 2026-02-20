@@ -19,6 +19,8 @@ public interface IFixHubApiClient
     Task<ApiResult<PagedResult<JobDto>>> ListJobsAsync(int page, int pageSize, int? status = null, int? categoryId = null);
     Task<ApiResult<PagedResult<JobDto>>> ListMyJobsAsync(int page, int pageSize);
     Task<ApiResult<JobDto>> CompleteJobAsync(Guid jobId);
+    Task<ApiResult<JobDto>> CancelJobAsync(Guid jobId);
+    Task<ApiResult<IssueDto>> ReportJobIssueAsync(Guid jobId, string reason, string? detail);
 
     // Proposals
     Task<ApiResult<ProposalDto>> SubmitProposalAsync(Guid jobId, SubmitProposalRequest request);
@@ -35,6 +37,19 @@ public interface IFixHubApiClient
     // Admin (postulantes)
     Task<ApiResult<PagedResult<ApplicantDto>>> ListApplicantsAsync(int page, int pageSize, string? status = null);
     Task<ApiResult<object>> UpdateTechnicianStatusAsync(Guid technicianId, int status);
+
+    // Admin (incidencias)
+    Task<ApiResult<PagedResult<IssueDto>>> ListJobIssuesAsync(int page, int pageSize);
+
+    // Admin (dashboard)
+    Task<ApiResult<OpsDashboardDto>> GetAdminDashboardAsync();
+    Task<ApiResult<JobDto>> AdminStartJobAsync(Guid jobId);
+    Task<ApiResult<JobDto>> AdminUpdateJobStatusAsync(Guid jobId, string newStatus);
+
+    // Notifications
+    Task<ApiResult<PagedResult<NotificationDto>>> GetNotificationsAsync(int page, int pageSize);
+    Task<ApiResult<int>> GetUnreadCountAsync();
+    Task<ApiResult<object>> MarkNotificationReadAsync(Guid notificationId);
 }
 
 public record HealthResponse(string Status, string Version, DateTime Timestamp);

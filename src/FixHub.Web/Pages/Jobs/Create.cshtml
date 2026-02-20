@@ -45,17 +45,7 @@
                         <input asp-for="Input.AddressText" class="form-control" placeholder="Calle, ciudad, referencias..." />
                         <span asp-validation-for="Input.AddressText" class="text-danger"></span>
                     </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-6">
-                            <label asp-for="Input.BudgetMin" class="form-label">Presupuesto mínimo ($)</label>
-                            <input asp-for="Input.BudgetMin" class="form-control" type="number" step="0.01" min="0" placeholder="50" />
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="Input.BudgetMax" class="form-label">Presupuesto máximo ($)</label>
-                            <input asp-for="Input.BudgetMax" class="form-control" type="number" step="0.01" min="0" placeholder="200" />
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 mt-2">
                         <button type="submit" class="btn btn-primary">Enviar solicitud</button>
                         <a asp-page="/Jobs/Index" class="btn btn-outline-secondary">Cancelar</a>
                     </div>
