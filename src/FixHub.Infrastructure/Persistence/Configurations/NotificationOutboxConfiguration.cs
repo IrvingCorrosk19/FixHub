@@ -21,7 +21,9 @@ public class NotificationOutboxConfiguration : IEntityTypeConfiguration<Notifica
         builder.Property(o => o.Status).HasColumnName("status").HasConversion<int>().HasDefaultValue(OutboxStatus.Pending).IsRequired();
         builder.Property(o => o.Attempts).HasColumnName("attempts").HasDefaultValue(0).IsRequired();
         builder.Property(o => o.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()").IsRequired();
+        builder.Property(o => o.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("NOW()").IsRequired();
         builder.Property(o => o.SentAt).HasColumnName("sent_at");
+        builder.Property(o => o.NextRetryAt).HasColumnName("next_retry_at");
         builder.Property(o => o.JobId).HasColumnName("job_id");
         builder.Property(o => o.NotificationId).HasColumnName("notification_id");
 

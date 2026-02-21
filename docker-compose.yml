@@ -1,52 +1,97 @@
+# FixHub - API + Web + PostgreSQL
+# Para VPS: prefijo fixhub_, puerto 8084, red/volúmenes aislados
+# NO afecta: CarnetQR (8001), PanamaTravelHub (8082), n8n (8083)
+#
 services:
-  postgres:
-    image: postgres:16-alpine
+  fixhub_postgres:
+    image: postgres:15-alpine
+    container_name: fixhub_postgres
+    restart: always
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: FixHub
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB:-FixHub}
+      POSTGRES_USER: ${POSTGRES_USER:-fixhubuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - fixhub_postgres_data:/var/lib/postgresql/data
+    networks:
+      - fixhub_net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fixhubuser} -d ${POSTGRES_DB:-FixHub}"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
-  migrator:
+  fixhub_migrator:
     build:
       context: .
       dockerfile: src/FixHub.Migrator/Dockerfile
-    environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=FixHub;Username=postgres;Password=postgres"
+    container_name: fixhub_migrator
     depends_on:
-      postgres:
+      fixhub_postgres:
         condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      ConnectionStrings__DefaultConnection: Host=fixhub_postgres;Port=5432;Database=${POSTGRES_DB:-FixHub};Username=${POSTGRES_USER:-fixhubuser};Password=${POSTGRES_PASSWORD}
+    networks:
+      - fixhub_net
+    restart: "no"
 
-  api:
+  fixhub_api:
     build:
       context: .
       dockerfile: src/FixHub.API/Dockerfile
-    environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=FixHub;Username=postgres;Password=postgres"
-      JwtSettings__SecretKey: "docker-compose-secret-key-min-32-characters-long!!"
-      JwtSettings__Issuer: "FixHub.API"
-      JwtSettings__Audience: "FixHub.Clients"
-      ASPNETCORE_ENVIRONMENT: Development
-      WebOrigin: "http://localhost:8081"
-    ports:
-      - "8080:8080"
+    container_name: fixhub_api
+    restart: always
     depends_on:
-      migrator:
+      fixhub_migrator:
         condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=fixhub_postgres;Port=5432;Database=${POSTGRES_DB:-FixHub};Username=${POSTGRES_USER:-fixhubuser};Password=${POSTGRES_PASSWORD}
+      JwtSettings__SecretKey: ${JWT_SECRET_KEY}
+      JwtSettings__Issuer: FixHub.API
+      JwtSettings__Audience: FixHub.Clients
+      WebOrigin: ${WEB_ORIGIN:-https://fixhub.autonomousflow.lat}
+      BaseWebUrl: ${WEB_ORIGIN:-https://fixhub.autonomousflow.lat}
+    networks:
+      - fixhub_net
 
-  web:
+  fixhub_web:
     build:
       context: .
       dockerfile: src/FixHub.Web/Dockerfile
-    environment:
-      ApiSettings__BaseUrl: "http://api:8080"
-    ports:
-      - "8081:8080"
+    container_name: fixhub_web
+    restart: always
     depends_on:
-      - api
+      - fixhub_api
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_DATAPROTECTION_PATH: /app/dataprotection-keys
+      ApiSettings__BaseUrl: http://fixhub_api:8080
+    volumes:
+      - fixhub_dataprotection_keys:/app/dataprotection-keys
+    ports:
+      - "8084:8080"
+    networks:
+      - fixhub_net
+
+volumes:
+  fixhub_postgres_data:
+    name: fixhub_postgres_data
+  fixhub_dataprotection_keys:
+    name: fixhub_dataprotection_keys
+
+networks:
+  fixhub_net:
+    name: fixhub_net
+    driver: bridge

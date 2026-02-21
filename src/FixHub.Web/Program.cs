@@ -1,6 +1,18 @@
 using FixHub.Web.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ForwardedHeaders: para detectar HTTPS cuando va detrás de nginx
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(o =>
+    {
+        o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        o.KnownNetworks.Clear();
+        o.KnownProxies.Clear();
+    });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Razor Pages
@@ -31,10 +43,8 @@ builder.Services.AddAuthentication("CookieAuth")
         options.Cookie.Name = "fixhub_token";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        // FASE 5.2: Secure solo en Production para que local http no falle
-        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
-            ? CookieSecurePolicy.SameAsRequest
-            : CookieSecurePolicy.Always;
+        // HTTPS: Secure cuando hay X-Forwarded-Proto (detectado con ForwardedHeaders)
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.LoginPath = "/Account/Login";
         options.LogoutPath = "/Account/Logout";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
@@ -46,11 +56,75 @@ builder.Logging.AddConsole();
 
 var app = builder.Build();
 
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("[FixHub.Web] API BaseUrl = {ApiBaseUrl}", apiBaseUrl);
+
+// Desarrollo: si la API no responde, intentar iniciarla automáticamente
+if (app.Environment.IsDevelopment())
+{
+    await EnsureApiRunningAsync(apiBaseUrl, logger);
+}
+
+static async Task EnsureApiRunningAsync(string apiBaseUrl, ILogger logger)
+{
+    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+    try
+    {
+        using var client = new HttpClient();
+        var resp = await client.GetAsync($"{apiBaseUrl.TrimEnd('/')}/api/v1/health", cts.Token);
+        if (resp.IsSuccessStatusCode)
+        {
+            logger.LogInformation("[FixHub.Web] API ya está respondiendo en {Url}", apiBaseUrl);
+            return;
+        }
+    }
+    catch { /* API no responde */ }
+
+    var apiProj = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "FixHub.API", "FixHub.API.csproj");
+    if (!File.Exists(apiProj))
+    {
+        apiProj = Path.Combine(Directory.GetCurrentDirectory(), "..", "FixHub.API", "FixHub.API.csproj");
+    }
+    if (!File.Exists(apiProj))
+    {
+        logger.LogWarning("[FixHub.Web] No se encontró FixHub.API.csproj. Inicia la API manualmente: dotnet run --project src/FixHub.API");
+        return;
+    }
+
+    logger.LogInformation("[FixHub.Web] Iniciando FixHub.API... (puede tardar unos segundos)");
+    var pi = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        Arguments = $"run --project \"{Path.GetFullPath(apiProj)}\"",
+        UseShellExecute = true,
+        CreateNoWindow = false
+    };
+    System.Diagnostics.Process.Start(pi);
+
+    for (var i = 0; i < 20; i++)
+    {
+        await Task.Delay(1500);
+        try
+        {
+            using var client = new HttpClient();
+            var resp = await client.GetAsync($"{apiBaseUrl.TrimEnd('/')}/api/v1/health");
+            if (resp.IsSuccessStatusCode)
+            {
+                logger.LogInformation("[FixHub.Web] API lista en {Url} tras ~{Sec}s", apiBaseUrl, (i + 1) * 2);
+                return;
+            }
+        }
+        catch { }
+    }
+    logger.LogWarning("[FixHub.Web] La API no respondió a tiempo. El login puede fallar hasta que arranque.");
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. Pipeline HTTP
 // ─────────────────────────────────────────────────────────────────────────────
 if (!app.Environment.IsDevelopment())
 {
+    app.UseForwardedHeaders();
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }

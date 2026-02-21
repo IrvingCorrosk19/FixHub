@@ -66,7 +66,7 @@ public class JobsController(ISender mediator) : ApiControllerBase
                 Instance = HttpContext.Request.Path,
                 Extensions = { ["errorCode"] = "FORBIDDEN" }
             });
-        var result = await mediator.Send(new ListJobsQuery(status, categoryId, page, pageSize), ct);
+        var result = await mediator.Send(new ListJobsQuery(status, categoryId, page, pageSize, CurrentUserId, CurrentUserRole), ct);
         return result.ToActionResult(this);
     }
 
@@ -118,6 +118,19 @@ public class JobsController(ISender mediator) : ApiControllerBase
     public async Task<IActionResult> Complete(Guid id, CancellationToken ct)
     {
         var result = await mediator.Send(new CompleteJobCommand(id, CurrentUserId), ct);
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>Start an assigned job (Assigned → InProgress). [Technician only — own assignment]</summary>
+    [HttpPost("{id:guid}/start")]
+    [Authorize(Policy = "TechnicianOnly")]
+    [ProducesResponseType(typeof(JobDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Start(Guid id, CancellationToken ct)
+    {
+        var result = await mediator.Send(new TechnicianStartJobCommand(id, CurrentUserId), ct);
         return result.ToActionResult(this);
     }
 

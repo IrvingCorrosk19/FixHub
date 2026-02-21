@@ -1,3 +1,5 @@
+using FixHub.Infrastructure.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -25,6 +27,14 @@ public class FixHubApiFixture : IAsyncLifetime, IDisposable
         await _postgres.StartAsync();
         var connectionString = _postgres.GetConnectionString();
         _factory = new FixHubApiFactory(connectionString);
+    }
+
+    /// <summary>Ejecuta una acción con un DbContext scoped (para aserciones sobre DB).</summary>
+    public async Task WithDbContextAsync(Func<AppDbContext, Task> action)
+    {
+        using var scope = _factory!.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await action(db);
     }
 
     public void Dispose() => _postgres.DisposeAsync().AsTask().GetAwaiter().GetResult();

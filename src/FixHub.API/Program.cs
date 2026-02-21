@@ -15,6 +15,11 @@ using FixHub.Application.Common.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// FASE 14: Leer variables de entorno explícitamente (ya incluido por ASP.NET Core,
+// pero se hace explícito para documentar la política de configuración segura.
+// JWT__SecretKey y ConnectionStrings__DefaultConnection se leen desde env vars).
+builder.Configuration.AddEnvironmentVariables();
+
 // ForwardedHeaders (FASE 5.1): solo en Production cuando la app va detrás de proxy
 if (!builder.Environment.IsDevelopment())
 {
@@ -91,10 +96,17 @@ builder.Services.AddRateLimiter(options =>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. JWT Authentication
+// FASE 14: SecretKey se lee desde JwtSettings:SecretKey (appsettings) o JWT__SecretKey
+// (variable de entorno). Si falta o es < 32 chars → excepción y aborta el arranque.
 // ─────────────────────────────────────────────────────────────────────────────
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"]
-    ?? throw new InvalidOperationException("JwtSettings:SecretKey must be set.");
+    ?? builder.Configuration["JWT:SecretKey"];  // Soporta variable de entorno JWT__SecretKey
+
+if (string.IsNullOrWhiteSpace(secretKey) || secretKey.Length < 32)
+    throw new InvalidOperationException(
+        "JWT SecretKey is missing or too short (minimum 32 characters required). " +
+        "Configure via environment variable JWT__SecretKey or JwtSettings:SecretKey in appsettings.");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -217,7 +229,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// En Development la API puede correr solo HTTP; evitar 307 en health/auth
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 app.UseCors("WebPolicy");
 app.UseRateLimiter();
 app.UseAuthentication();

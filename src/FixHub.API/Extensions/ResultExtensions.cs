@@ -42,6 +42,8 @@ public static class ResultExtensions
             or "DUPLICATE_PROPOSAL"
             or "JOB_ALREADY_ASSIGNED"
             or "REVIEW_EXISTS"
+            or "CONCURRENCY_CONFLICT"
+            or "ALREADY_RESOLVED"
                 => controller.Conflict(ProblemFrom(result, 409)),
 
             "INVALID_CREDENTIALS"

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace FixHub.Web.Pages.Account;
 
-public class LoginModel(IFixHubApiClient apiClient) : PageModel
+public class LoginModel(IFixHubApiClient apiClient, ILogger<LoginModel> log) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -31,14 +31,17 @@ public class LoginModel(IFixHubApiClient apiClient) : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
+        log.LogInformation("[Login] Intentando login para {Email}", Input.Email);
         var result = await apiClient.LoginAsync(new LoginRequest(Input.Email, Input.Password));
 
         if (!result.IsSuccess)
         {
+            log.LogWarning("[Login] Falló: StatusCode={StatusCode} Error={Error}", result.StatusCode, result.ErrorMessage);
             ErrorMessage = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
             return Page();
         }
 
+        log.LogInformation("[Login] OK para {Email} Role={Role}", Input.Email, result.Value?.Role);
         var auth = result.Value!;
         await SignInAsync(auth);
         return RedirectToPage("/Jobs/Index");

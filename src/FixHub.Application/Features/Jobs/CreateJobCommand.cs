@@ -82,83 +82,102 @@ public class CreateJobCommandHandler(IApplicationDbContext db, IDashboardCacheIn
         if (customer is null)
             return Result<JobDto>.Failure("Customer not found.", "USER_NOT_FOUND");
 
-        var job = new Job
-        {
-            Id = Guid.NewGuid(),
-            CustomerId = req.CustomerId,
-            CategoryId = req.CategoryId,
-            Title = req.Title.Trim(),
-            Description = req.Description.Trim(),
-            AddressText = req.AddressText.Trim(),
-            Lat = req.Lat,
-            Lng = req.Lng,
-            Status = JobStatus.Open,
-            BudgetMin = req.BudgetMin,
-            BudgetMax = req.BudgetMax,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        db.Jobs.Add(job);
-        await db.SaveChangesAsync(ct);
-        dashboardCache.Invalidate();
-
-        // Notificar a Cliente: solicitud recibida (FASE 13)
-        await notifications.NotifyAsync(req.CustomerId, NotificationType.JobCreated,
-            "Hemos recibido tu solicitud. Te asignaremos un técnico pronto.", job.Id, ct);
-
-        // Notificar a Admins: nueva solicitud
-        var adminIds = await db.Users
-            .Where(u => u.Role == UserRole.Admin)
-            .Select(u => u.Id)
-            .ToListAsync(ct);
-        if (adminIds.Count > 0)
-            await notifications.NotifyManyAsync(adminIds, NotificationType.JobCreated,
-                $"Nueva solicitud: {job.Title}", job.Id, ct);
-
-        // Auto-asignar al técnico aprobado único (por el momento un solo técnico).
+        // Buscar técnico ANTES de abrir la transacción (lectura de solo lectura)
         var techProfile = await db.TechnicianProfiles
             .Include(tp => tp.User)
             .FirstOrDefaultAsync(tp => tp.Status == TechnicianStatus.Approved, ct);
 
-        if (techProfile != null)
+        // FASE 14: Transacción explícita — un único SaveChanges, rollback en cualquier error
+        await using var transaction = await db.BeginTransactionAsync(ct);
+        try
         {
-            var price = req.BudgetMin ?? req.BudgetMax ?? 1m;
-            var proposal = new Proposal
+            var job = new Job
             {
                 Id = Guid.NewGuid(),
-                JobId = job.Id,
-                TechnicianId = techProfile.UserId,
-                Price = price,
-                Message = "Asignación automática",
-                Status = ProposalStatus.Accepted,
+                CustomerId = req.CustomerId,
+                CategoryId = req.CategoryId,
+                Title = req.Title.Trim(),
+                Description = req.Description.Trim(),
+                AddressText = req.AddressText.Trim(),
+                Lat = req.Lat,
+                Lng = req.Lng,
+                Status = JobStatus.Open,
+                BudgetMin = req.BudgetMin,
+                BudgetMax = req.BudgetMax,
                 CreatedAt = DateTime.UtcNow
             };
-            db.Proposals.Add(proposal);
 
-            db.JobAssignments.Add(new JobAssignment
+            db.Jobs.Add(job);
+
+            Guid? techId = null;
+            string? techName = null;
+
+            // Auto-asignar al técnico aprobado si existe
+            if (techProfile != null)
             {
-                Id = Guid.NewGuid(),
-                JobId = job.Id,
-                ProposalId = proposal.Id,
-                AcceptedAt = DateTime.UtcNow
-            });
+                var price = req.BudgetMin ?? req.BudgetMax ?? 1m;
+                var proposal = new Proposal
+                {
+                    Id = Guid.NewGuid(),
+                    JobId = job.Id,
+                    TechnicianId = techProfile.UserId,
+                    Price = price,
+                    Message = "Asignación automática",
+                    Status = ProposalStatus.Accepted,
+                    CreatedAt = DateTime.UtcNow
+                };
+                db.Proposals.Add(proposal);
 
-            job.Status = JobStatus.Assigned;
-            job.AssignedAt = DateTime.UtcNow;
+                db.JobAssignments.Add(new JobAssignment
+                {
+                    Id = Guid.NewGuid(),
+                    JobId = job.Id,
+                    ProposalId = proposal.Id,
+                    AcceptedAt = DateTime.UtcNow
+                });
+
+                job.Status = JobStatus.Assigned;
+                job.AssignedAt = DateTime.UtcNow;
+                techId = techProfile.UserId;
+                techName = techProfile.User.FullName;
+            }
+
             await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
             dashboardCache.Invalidate();
 
-            // Notificar Customer + Technician por auto-asignación
-            await notifications.NotifyAsync(req.CustomerId, NotificationType.JobAssigned,
-                "Tu solicitud ha sido asignada a un técnico.", job.Id, ct);
-            await notifications.NotifyAsync(techProfile.UserId, NotificationType.JobAssigned,
-                $"Has sido asignado a: {job.Title}", job.Id, ct);
+            // Notificaciones FUERA de la transacción (Outbox pattern: tolerante a fallos)
+            await notifications.NotifyAsync(req.CustomerId, NotificationType.JobCreated,
+                "Hemos recibido tu solicitud. Te asignaremos un técnico pronto.", job.Id, ct);
 
-            return Result<JobDto>.Success(job.ToDto(
-                customer.FullName, category.Name, techProfile.UserId, techProfile.User.FullName));
+            var adminIds = await db.Users
+                .Where(u => u.Role == UserRole.Admin)
+                .Select(u => u.Id)
+                .ToListAsync(ct);
+            if (adminIds.Count > 0)
+                await notifications.NotifyManyAsync(adminIds, NotificationType.JobCreated,
+                    $"Nueva solicitud: {job.Title}", job.Id, ct);
+
+            if (techProfile != null)
+            {
+                await notifications.NotifyAsync(req.CustomerId, NotificationType.JobAssigned,
+                    "Tu solicitud ha sido asignada a un técnico.", job.Id, ct);
+                await notifications.NotifyAsync(techProfile.UserId, NotificationType.JobAssigned,
+                    $"Has sido asignado a: {job.Title}", job.Id, ct);
+            }
+
+            return Result<JobDto>.Success(job.ToDto(customer.FullName, category.Name, techId, techName));
         }
-
-        return Result<JobDto>.Success(job.ToDto(customer.FullName, category.Name));
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync(ct);
+            return Result<JobDto>.Failure("Concurrent modification detected. Please retry.", "CONCURRENCY_CONFLICT");
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
     }
 }
 

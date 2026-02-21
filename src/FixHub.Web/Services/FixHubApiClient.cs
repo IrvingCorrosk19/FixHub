@@ -2,13 +2,15 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
+using Microsoft.Extensions.Logging;
+
 namespace FixHub.Web.Services;
 
 /// <summary>
 /// Cliente HTTP hacia FixHub.API.
 /// El token Bearer se agrega automáticamente via BearerTokenHandler.
 /// </summary>
-public class FixHubApiClient(HttpClient http) : IFixHubApiClient
+public class FixHubApiClient(HttpClient http, ILogger<FixHubApiClient> log) : IFixHubApiClient
 {
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
@@ -89,6 +91,12 @@ public class FixHubApiClient(HttpClient http) : IFixHubApiClient
     public Task<ApiResult<PagedResult<IssueDto>>> ListJobIssuesAsync(int page, int pageSize) =>
         GetAsync<PagedResult<IssueDto>>($"api/v1/admin/issues?page={page}&pageSize={pageSize}");
 
+    public Task<ApiResult<object>> ResolveAlertAsync(Guid alertId) =>
+        PatchAsync<object>($"api/v1/admin/alerts/{alertId}/resolve", new { });
+
+    public Task<ApiResult<object>> ResolveJobIssueAsync(Guid issueId, string resolutionNote) =>
+        PostAsync<object>($"api/v1/admin/issues/{issueId}/resolve", new ResolveIssueRequest(resolutionNote));
+
     public Task<ApiResult<OpsDashboardDto>> GetAdminDashboardAsync() =>
         GetAsync<OpsDashboardDto>("api/v1/admin/dashboard");
 
@@ -111,16 +119,25 @@ public class FixHubApiClient(HttpClient http) : IFixHubApiClient
     // ─── Helpers ──────────────────────────────────────────────────────────────
     private async Task<ApiResult<T>> GetAsync<T>(string url)
     {
+        var fullUrl = http.BaseAddress + url.TrimStart('/');
+        log.LogInformation("[FixHubApi] GET {Url}", fullUrl);
         try
         {
             var response = await http.GetAsync(url);
+            log.LogInformation("[FixHubApi] GET {Url} -> {StatusCode}", fullUrl, (int)response.StatusCode);
             return await ParseResponseAsync<T>(response);
         }
-        catch (Exception ex) { return ApiResult<T>.Failure($"Error de red: {ex.Message}", 0); }
+        catch (Exception ex)
+        {
+            log.LogWarning(ex, "[FixHubApi] GET {Url} falló: {Message}", fullUrl, ex.Message);
+            return ApiResult<T>.Failure($"Error de red: {ex.Message}", 0);
+        }
     }
 
     private async Task<ApiResult<T>> PostAsync<T>(string url, object? body = null)
     {
+        var fullUrl = http.BaseAddress + url.TrimStart('/');
+        log.LogInformation("[FixHubApi] POST {Url}", fullUrl);
         try
         {
             HttpResponseMessage response;
@@ -128,19 +145,31 @@ public class FixHubApiClient(HttpClient http) : IFixHubApiClient
                 response = await http.PostAsync(url, null);
             else
                 response = await http.PostAsJsonAsync(url, body);
+            log.LogInformation("[FixHubApi] POST {Url} -> {StatusCode}", fullUrl, (int)response.StatusCode);
             return await ParseResponseAsync<T>(response);
         }
-        catch (Exception ex) { return ApiResult<T>.Failure($"Error de red: {ex.Message}", 0); }
+        catch (Exception ex)
+        {
+            log.LogWarning(ex, "[FixHubApi] POST {Url} falló: {Message}", fullUrl, ex.Message);
+            return ApiResult<T>.Failure($"Error de red: {ex.Message}", 0);
+        }
     }
 
     private async Task<ApiResult<T>> PatchAsync<T>(string url, object body)
     {
+        var fullUrl = http.BaseAddress + url.TrimStart('/');
+        log.LogInformation("[FixHubApi] PATCH {Url}", fullUrl);
         try
         {
             var response = await http.PatchAsJsonAsync(url, body);
+            log.LogInformation("[FixHubApi] PATCH {Url} -> {StatusCode}", fullUrl, (int)response.StatusCode);
             return await ParseResponseAsync<T>(response);
         }
-        catch (Exception ex) { return ApiResult<T>.Failure($"Error de red: {ex.Message}", 0); }
+        catch (Exception ex)
+        {
+            log.LogWarning(ex, "[FixHubApi] PATCH {Url} falló: {Message}", fullUrl, ex.Message);
+            return ApiResult<T>.Failure($"Error de red: {ex.Message}", 0);
+        }
     }
 
     private static async Task<ApiResult<T>> ParseResponseAsync<T>(HttpResponseMessage response)

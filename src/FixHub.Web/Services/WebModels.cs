@@ -154,6 +154,7 @@ public record ApplicantDto(
 
 // ─── Job Issues (incidencias) ─────────────────────────────────────────────────
 
+// FASE 14: ResolvedAt, ResolvedByUserId, ResolutionNote opcionales (backward-compatible).
 public record IssueDto(
     Guid Id,
     Guid JobId,
@@ -161,9 +162,13 @@ public record IssueDto(
     string ReportedByName,
     string Reason,
     string? Detail,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    DateTime? ResolvedAt = null,
+    Guid? ResolvedByUserId = null,
+    string? ResolutionNote = null);
 
 public record ReportIssueRequest(string Reason, string? Detail);
+public record ResolveIssueRequest(string ResolutionNote);
 
 // ─── Admin Dashboard ──────────────────────────────────────────────────────────
 

@@ -34,6 +34,16 @@ public class JobIssueConfiguration : IEntityTypeConfiguration<JobIssue>
             .HasColumnName("created_at")
             .HasDefaultValueSql("NOW()");
 
+        builder.Property(i => i.ResolvedAt)
+            .HasColumnName("resolved_at");
+
+        builder.Property(i => i.ResolvedByUserId)
+            .HasColumnName("resolved_by_user_id");
+
+        builder.Property(i => i.ResolutionNote)
+            .HasColumnName("resolution_note")
+            .HasMaxLength(1000);
+
         // Índices para consultas frecuentes del admin
         builder.HasIndex(i => i.JobId);
         builder.HasIndex(i => i.CreatedAt);

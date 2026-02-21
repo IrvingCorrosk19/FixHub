@@ -186,6 +186,161 @@ public class ApiIntegrationTests : IClassFixture<FixHubApiFixture>
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 
+    // ─── CICLO 1: IDOR — Cancel y Complete ────────────────────────────────────
+
+    [Fact]
+    public async Task Customer_Cannot_Cancel_Other_Customers_Job_Returns_403()
+    {
+        var cust1 = $"cust1-{Guid.NewGuid():N}@test.local";
+        var cust2 = $"cust2-{Guid.NewGuid():N}@test.local";
+        await Register(cust1, "Password1!", UserRole.Customer);
+        await Register(cust2, "Password1!", UserRole.Customer);
+
+        var token1 = await Login(cust1, "Password1!");
+        var token2 = await Login(cust2, "Password1!");
+        var jobId = await CreateJob(token1, "Job to cancel", "Desc", "123 St", 100m, 200m);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/jobs/{jobId}/cancel");
+        request.Headers.Add("Authorization", "Bearer " + token2);
+        var resp = await Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Customer_Cannot_Complete_Other_Customers_Job_Returns_403()
+    {
+        var cust1 = $"cust1-{Guid.NewGuid():N}@test.local";
+        var cust2 = $"cust2-{Guid.NewGuid():N}@test.local";
+        await Register(cust1, "Password1!", UserRole.Customer);
+        await Register(cust2, "Password1!", UserRole.Customer);
+
+        var token1 = await Login(cust1, "Password1!");
+        var token2 = await Login(cust2, "Password1!");
+        var adminToken = await LoginAdmin();
+
+        var jobId = await CreateJob(token1, "Job to complete", "Desc", "123 St", 100m, 200m);
+        await AdminUpdateJobStatus(adminToken, jobId, "InProgress");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/jobs/{jobId}/complete");
+        request.Headers.Add("Authorization", "Bearer " + token2);
+        var resp = await Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    // ─── CICLO 3: Technician start job ────────────────────────────────────────
+
+    [Fact]
+    public async Task Technician_Can_Start_Assigned_Job_Returns_200()
+    {
+        var custEmail = $"cust-{Guid.NewGuid():N}@test.local";
+        var techEmail = $"tech-{Guid.NewGuid():N}@test.local";
+        await Register(custEmail, "Password1!", UserRole.Customer);
+        await Register(techEmail, "Password1!", UserRole.Technician);
+
+        var custToken  = await Login(custEmail, "Password1!");
+        var techToken  = await Login(techEmail, "Password1!");
+        var adminToken = await LoginAdmin();
+
+        var jobId      = await CreateJob(custToken, "Electrician job", "Fix wiring", "456 Ave", 100m, 200m);
+        var proposalId = await SubmitProposal(techToken, jobId, 150m);
+        await AcceptProposal(adminToken, proposalId);
+
+        // Technician starts the job
+        var startReq = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/jobs/{jobId}/start");
+        startReq.Headers.Add("Authorization", "Bearer " + techToken);
+        var startResp = await Client.SendAsync(startReq);
+        Assert.Equal(HttpStatusCode.OK, startResp.StatusCode);
+
+        // Verify status via admin
+        var getReq = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/jobs/{jobId}");
+        getReq.Headers.Add("Authorization", "Bearer " + adminToken);
+        var getResp = await Client.SendAsync(getReq);
+        getResp.EnsureSuccessStatusCode();
+        var json = await getResp.Content.ReadAsStringAsync();
+        Assert.Contains("InProgress", json);
+        Assert.Contains("startedAt", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Technician_Cannot_Start_Job_Not_Assigned_To_Them_Returns_403()
+    {
+        var custEmail  = $"cust-{Guid.NewGuid():N}@test.local";
+        var tech1Email = $"tech1-{Guid.NewGuid():N}@test.local";
+        var tech2Email = $"tech2-{Guid.NewGuid():N}@test.local";
+        await Register(custEmail,  "Password1!", UserRole.Customer);
+        await Register(tech1Email, "Password1!", UserRole.Technician);
+        await Register(tech2Email, "Password1!", UserRole.Technician);
+
+        var custToken  = await Login(custEmail,  "Password1!");
+        var tech1Token = await Login(tech1Email, "Password1!");
+        var tech2Token = await Login(tech2Email, "Password1!");
+        var adminToken = await LoginAdmin();
+
+        var jobId      = await CreateJob(custToken, "Job for tech1", "Desc", "789 Blvd", 100m, 200m);
+        var proposalId = await SubmitProposal(tech1Token, jobId, 150m);
+        await AcceptProposal(adminToken, proposalId);
+
+        // tech2 tries to start job assigned to tech1
+        var startReq = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/jobs/{jobId}/start");
+        startReq.Headers.Add("Authorization", "Bearer " + tech2Token);
+        var startResp = await Client.SendAsync(startReq);
+        Assert.Equal(HttpStatusCode.Forbidden, startResp.StatusCode);
+    }
+
+    // ─── CICLO 3: No doble completación ───────────────────────────────────────
+
+    [Fact]
+    public async Task CompleteJob_Twice_Returns_400_InvalidStatus()
+    {
+        var custEmail  = $"cust-{Guid.NewGuid():N}@test.local";
+        var techEmail  = $"tech-{Guid.NewGuid():N}@test.local";
+        await Register(custEmail, "Password1!", UserRole.Customer);
+        await Register(techEmail, "Password1!", UserRole.Technician);
+
+        var custToken  = await Login(custEmail, "Password1!");
+        var techToken  = await Login(techEmail, "Password1!");
+        var adminToken = await LoginAdmin();
+
+        var jobId      = await CreateJob(custToken, "Job for double complete", "Desc", "123 St", 100m, 200m);
+        var proposalId = await SubmitProposal(techToken, jobId, 150m);
+        await AcceptProposal(adminToken, proposalId);
+        await AdminUpdateJobStatus(adminToken, jobId, "InProgress");
+        await CompleteJob(custToken, jobId);
+
+        // Second complete attempt should fail
+        var req = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/jobs/{jobId}/complete");
+        req.Headers.Add("Authorization", "Bearer " + custToken);
+        var resp = await Client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    // ─── CICLO 4: No doble resolución de incidencia ───────────────────────────
+
+    [Fact]
+    public async Task ResolveIssue_Twice_Returns_409_Conflict()
+    {
+        var custEmail  = $"cust-{Guid.NewGuid():N}@test.local";
+        await Register(custEmail, "Password1!", UserRole.Customer);
+
+        var custToken  = await Login(custEmail, "Password1!");
+        var adminToken = await LoginAdmin();
+
+        var jobId   = await CreateJob(custToken, "Job with issue", "Desc", "123 St", 100m, 200m);
+        var issueId = await ReportIssue(custToken, jobId, "late");
+
+        // First resolve
+        await ResolveIssue(adminToken, issueId, "Issue resolved by admin.");
+
+        // Second resolve should return 409
+        var req = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/admin/issues/{issueId}/resolve");
+        req.Headers.Add("Authorization", "Bearer " + adminToken);
+        req.Content = JsonContent.Create(new { resolutionNote = "Attempted double resolve." });
+        var resp = await Client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
+        var json = await resp.Content.ReadAsStringAsync();
+        Assert.Contains("ALREADY_RESOLVED", json);
+    }
+
     [Fact]
     public async Task Happy_Path_Job_Proposal_Accept_Complete_Review()
     {
@@ -313,6 +468,26 @@ public class ApiIntegrationTests : IClassFixture<FixHubApiFixture>
         resp.EnsureSuccessStatusCode();
     }
 
+    private async Task<Guid> ReportIssue(string bearerToken, Guid jobId, string reason)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/jobs/{jobId}/issues");
+        request.Headers.Add("Authorization", "Bearer " + bearerToken);
+        request.Content = JsonContent.Create(new { reason, detail = (string?)null });
+        var resp = await Client.SendAsync(request);
+        resp.EnsureSuccessStatusCode();
+        var issue = await resp.Content.ReadFromJsonAsync<IssueDto>();
+        return issue!.Id;
+    }
+
+    private async Task ResolveIssue(string adminToken, Guid issueId, string resolutionNote)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/admin/issues/{issueId}/resolve");
+        request.Headers.Add("Authorization", "Bearer " + adminToken);
+        request.Content = JsonContent.Create(new { resolutionNote });
+        var resp = await Client.SendAsync(request);
+        resp.EnsureSuccessStatusCode();
+    }
+
     private sealed class AuthResponse
     {
         public Guid UserId { get; set; }
@@ -328,6 +503,11 @@ public class ApiIntegrationTests : IClassFixture<FixHubApiFixture>
     }
 
     private sealed class ProposalDto
+    {
+        public Guid Id { get; set; }
+    }
+
+    private sealed class IssueDto
     {
         public Guid Id { get; set; }
     }

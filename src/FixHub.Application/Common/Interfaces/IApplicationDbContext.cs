@@ -1,5 +1,6 @@
 using FixHub.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace FixHub.Application.Common.Interfaces;
 
@@ -25,4 +26,7 @@ public interface IApplicationDbContext
     DbSet<JobAlert> JobAlerts { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>FASE 14: Transacciones explícitas para operaciones críticas.</summary>
+    Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
 }

@@ -32,7 +32,10 @@ public class ListJobIssuesQueryHandler(IApplicationDbContext db)
                 i.ReportedBy.FullName,
                 i.Reason,
                 i.Detail,
-                i.CreatedAt))
+                i.CreatedAt,
+                i.ResolvedAt,
+                i.ResolvedByUserId,
+                i.ResolutionNote))
             .ToListAsync(ct);
 
         return Result<PagedResult<IssueDto>>.Success(new PagedResult<IssueDto>

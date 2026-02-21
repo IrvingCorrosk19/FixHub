@@ -99,7 +99,34 @@ public class AdminController(ISender mediator) : ApiControllerBase
         var result = await mediator.Send(new AdminUpdateJobStatusCommand(id, request.NewStatus, CurrentUserId), ct);
         return result.ToActionResult(this);
     }
+
+    /// <summary>Resolve a SLA alert. [Admin only] — FASE 14</summary>
+    [HttpPatch("alerts/{id:guid}/resolve")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ResolveAlert(Guid id, CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new ResolveJobAlertCommand(id, CurrentUserId), ct);
+        return result.ToActionResult(this, successStatusCode: 204);
+    }
+
+    /// <summary>Resolve a job issue/incident. [Admin only] — FASE 14</summary>
+    [HttpPost("issues/{id:guid}/resolve")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ResolveIssue(
+        Guid id,
+        [FromBody] ResolveIssueRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new ResolveJobIssueCommand(id, CurrentUserId, request.ResolutionNote), ct);
+        return result.ToActionResult(this, successStatusCode: 204);
+    }
 }
 
 public record UpdateStatusRequest(int Status);
 public record AdminJobStatusRequest(string NewStatus);
+public record ResolveIssueRequest(string ResolutionNote);

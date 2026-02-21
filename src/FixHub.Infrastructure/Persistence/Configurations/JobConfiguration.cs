@@ -66,6 +66,12 @@ public class JobConfiguration : IEntityTypeConfiguration<Job>
         builder.Property(j => j.CancelledAt)
             .HasColumnName("cancelled_at");
 
+        // FASE 14: Concurrencia optimista via xmin (columna de sistema PostgreSQL).
+        // No requiere DDL migration — xmin existe en toda tabla PostgreSQL.
+#pragma warning disable CS0618 // UseXminAsConcurrencyToken obsoleto en Npgsql 8+; comportamiento idéntico, migrar cuando Npgsql lo elimine
+        builder.UseXminAsConcurrencyToken();
+#pragma warning restore CS0618
+
         // Indexes críticos para queries frecuentes
         builder.HasIndex(j => j.Status);
         builder.HasIndex(j => j.CustomerId);

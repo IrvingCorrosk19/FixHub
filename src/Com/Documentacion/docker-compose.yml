@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: carnetqr_postgres
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - carnetqr_net
+
+  web:
+    build: .
+    container_name: carnetqr_web
+    restart: always
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_DATAPROTECTION_PATH: /app/dataprotection-keys
+    volumes:
+      - dataprotection_keys:/app/dataprotection-keys
+    ports:
+      - "80:8080"
+    networks:
+      - carnetqr_net
+
+volumes:
+  postgres_data:
+  dataprotection_keys:
+
+networks:
+  carnetqr_net:

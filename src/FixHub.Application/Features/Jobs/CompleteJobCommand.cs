@@ -33,46 +33,62 @@ public class CompleteJobCommandHandler(IApplicationDbContext db, ILogger<Complet
                 $"Job must be InProgress or Assigned to complete. Current status: {job.Status}",
                 "INVALID_STATUS");
 
-        var statusBefore = job.Status.ToString();
-        job.Status = JobStatus.Completed;
-        job.CompletedAt = DateTime.UtcNow;
-
-        if (job.Assignment is not null)
-            job.Assignment.CompletedAt = DateTime.UtcNow;
-
-        // Actualizar métricas del técnico
-        if (job.Assignment is not null)
+        // FASE 14: Transacción explícita para consistencia y protección contra concurrencia
+        await using var transaction = await db.BeginTransactionAsync(ct);
+        try
         {
-            var proposal = await db.Proposals
-                .FirstOrDefaultAsync(p => p.Id == job.Assignment.ProposalId, ct);
+            var statusBefore = job.Status.ToString();
+            job.Status = JobStatus.Completed;
+            job.CompletedAt = DateTime.UtcNow;
 
-            if (proposal is not null)
+            if (job.Assignment is not null)
+                job.Assignment.CompletedAt = DateTime.UtcNow;
+
+            // Actualizar métricas del técnico dentro de la misma transacción
+            if (job.Assignment is not null)
             {
-                var techProfile = await db.TechnicianProfiles
-                    .FirstOrDefaultAsync(tp => tp.UserId == proposal.TechnicianId, ct);
+                var proposal = await db.Proposals
+                    .FirstOrDefaultAsync(p => p.Id == job.Assignment.ProposalId, ct);
 
-                if (techProfile is not null)
-                    techProfile.CompletedJobs++;
+                if (proposal is not null)
+                {
+                    var techProfile = await db.TechnicianProfiles
+                        .FirstOrDefaultAsync(tp => tp.UserId == proposal.TechnicianId, ct);
+
+                    if (techProfile is not null)
+                        techProfile.CompletedJobs++;
+                }
             }
+
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+
+            logger.LogInformation("Job status changed. JobId={JobId} StatusBefore={StatusBefore} StatusAfter=Completed",
+                job.Id, statusBefore);
+
+            // Notificaciones FUERA de la transacción (Outbox pattern: tolerante a fallos)
+            await notifications.NotifyAsync(job.CustomerId, NotificationType.JobCompleted,
+                "Tu servicio ha sido completado. ¡Gracias por confiar en FixHub! Califica al técnico cuando puedas.", job.Id, ct);
+
+            if (job.Assignment is not null)
+            {
+                var prop = await db.Proposals.FirstOrDefaultAsync(p => p.Id == job.Assignment.ProposalId, ct);
+                if (prop is not null)
+                    await notifications.NotifyAsync(prop.TechnicianId, NotificationType.JobCompleted,
+                        "El cliente ha confirmado la finalización del servicio.", job.Id, ct);
+            }
+
+            return Result<JobDto>.Success(job.ToDto(job.Customer.FullName, job.Category.Name));
         }
-
-        await db.SaveChangesAsync(ct);
-        logger.LogInformation("Job status changed. JobId={JobId} StatusBefore={StatusBefore} StatusAfter=Completed",
-            job.Id, statusBefore);
-
-        // Notificar al Cliente (FASE 13)
-        await notifications.NotifyAsync(job.CustomerId, FixHub.Domain.Enums.NotificationType.JobCompleted,
-            "Tu servicio ha sido completado. ¡Gracias por confiar en FixHub! Califica al técnico cuando puedas.", job.Id, ct);
-
-        if (job.Assignment is not null)
+        catch (DbUpdateConcurrencyException)
         {
-            var prop = await db.Proposals.FirstOrDefaultAsync(p => p.Id == job.Assignment.ProposalId, ct);
-            if (prop is not null)
-                await notifications.NotifyAsync(prop.TechnicianId, FixHub.Domain.Enums.NotificationType.JobCompleted,
-                    "El cliente ha confirmado la finalización del servicio.", job.Id, ct);
+            await transaction.RollbackAsync(ct);
+            return Result<JobDto>.Failure("Concurrent modification detected. Please retry.", "CONCURRENCY_CONFLICT");
         }
-
-        return Result<JobDto>.Success(
-            job.ToDto(job.Customer.FullName, job.Category.Name));
+        catch (Exception)
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
     }
 }

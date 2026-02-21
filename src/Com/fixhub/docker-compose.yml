@@ -1,0 +1,84 @@
+# FixHub - Multi-servicio: API + Web + PostgreSQL
+# Aislado: prefijo fixhub_, puerto 8084, red/volúmenes propios
+# NO afecta: CarnetQR (8001/8081), PanamaTravelHub (8082), n8n (8083)
+#
+services:
+  fixhub_postgres:
+    image: postgres:15-alpine
+    container_name: fixhub_postgres
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-FixHub}
+      POSTGRES_USER: ${POSTGRES_USER:-fixhubuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - fixhub_postgres_data:/var/lib/postgresql/data
+    # NO exponer 5432 externamente; solo red interna
+    networks:
+      - fixhub_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fixhubuser} -d ${POSTGRES_DB:-FixHub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  fixhub_api:
+    build:
+      context: ../../..  # Repo root (cuando compose en src/Com/fixhub/)
+      dockerfile: src/FixHub.API/Dockerfile
+    container_name: fixhub_api
+    restart: always
+    depends_on:
+      fixhub_postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=fixhub_postgres;Port=5432;Database=${POSTGRES_DB:-FixHub};Username=${POSTGRES_USER:-fixhubuser};Password=${POSTGRES_PASSWORD}
+      JwtSettings__SecretKey: ${JWT_SECRET_KEY}
+      JwtSettings__Issuer: FixHub.API
+      JwtSettings__Audience: FixHub.Clients
+      WebOrigin: ${WEB_ORIGIN:-http://164.68.99.83:8084}
+      BaseWebUrl: ${WEB_ORIGIN:-http://164.68.99.83:8084}
+    # API interna; solo accesible desde fixhub_web
+    networks:
+      - fixhub_net
+
+  fixhub_web:
+    build:
+      context: ../../..  # Repo root (cuando compose en src/Com/fixhub/)
+      dockerfile: src/FixHub.Web/Dockerfile
+    container_name: fixhub_web
+    restart: always
+    depends_on:
+      - fixhub_api
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_DATAPROTECTION_PATH: /app/dataprotection-keys
+      # Web llama a la API por nombre del contenedor
+      ApiSettings__BaseUrl: http://fixhub_api:8080
+    volumes:
+      - fixhub_dataprotection_keys:/app/dataprotection-keys
+    ports:
+      - "8084:8080"
+    networks:
+      - fixhub_net
+
+volumes:
+  fixhub_postgres_data:
+    name: fixhub_postgres_data
+  fixhub_dataprotection_keys:
+    name: fixhub_dataprotection_keys
+
+networks:
+  fixhub_net:
+    name: fixhub_net
+    driver: bridge

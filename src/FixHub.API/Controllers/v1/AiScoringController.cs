@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FixHub.API.Controllers.v1;
 
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 [ApiController]
 [Route("api/v1/ai-scoring")]  // Ruta explícita: [controller] daría "aiscoring"
 public class AiScoringController(ISender mediator) : ControllerBase

@@ -14,7 +14,7 @@ namespace FixHub.Application.Features.Admin;
 /// </summary>
 public record StartJobCommand(Guid JobId, Guid AdminUserId) : IRequest<Result<JobDto>>;
 
-public class StartJobCommandHandler(IApplicationDbContext db, ILogger<StartJobCommandHandler> logger, INotificationService notifications)
+public class StartJobCommandHandler(IApplicationDbContext db, IDashboardCacheInvalidator dashboardCache, ILogger<StartJobCommandHandler> logger, INotificationService notifications)
     : IRequestHandler<StartJobCommand, Result<JobDto>>
 {
     public async Task<Result<JobDto>> Handle(StartJobCommand req, CancellationToken ct)
@@ -33,16 +33,35 @@ public class StartJobCommandHandler(IApplicationDbContext db, ILogger<StartJobCo
                 $"Solo se puede iniciar un trabajo en estado Open o Assigned. Estado actual: {job.Status}",
                 "INVALID_STATUS");
 
+        // FASE 14: Transacción explícita + protección contra concurrencia (xmin)
         var statusBefore = job.Status.ToString();
-        job.Status = JobStatus.InProgress;
+        await using var transaction = await db.BeginTransactionAsync(ct);
+        try
+        {
+            job.Status = JobStatus.InProgress;
 
-        if (job.Assignment is not null)
-            job.Assignment.StartedAt = DateTime.UtcNow;
+            if (job.Assignment is not null)
+                job.Assignment.StartedAt = DateTime.UtcNow;
 
-        await db.SaveChangesAsync(ct);
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync(ct);
+            return Result<JobDto>.Failure("Concurrent modification detected. Please retry.", "CONCURRENCY_CONFLICT");
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+
+        dashboardCache.Invalidate();
         logger.LogInformation("Job status changed. JobId={JobId} StatusBefore={StatusBefore} StatusAfter=InProgress",
             job.Id, statusBefore);
 
+        // Notificaciones FUERA de la transacción (Outbox pattern)
         await notifications.NotifyAsync(job.CustomerId, NotificationType.JobStarted,
             "El técnico está en camino.", job.Id, ct);
         if (job.Assignment is not null)

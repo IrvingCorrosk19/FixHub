@@ -123,9 +123,10 @@ public class JobSlaMonitor : BackgroundService
             created++;
         }
 
-        // 4. Issue > 1 hora sin resolución (Job con JobIssue antiguo)
+        // 4. Issue > 1 hora sin resolución (Job con JobIssue activo antiguo)
+        // BUG-4 FIX: filtrar i.ResolvedAt == null para no disparar alerta por issues ya resueltas
         var jobsWithOldIssues = await db.JobIssues
-            .Where(i => i.CreatedAt < issueLimit)
+            .Where(i => i.CreatedAt < issueLimit && i.ResolvedAt == null)
             .Select(i => i.JobId)
             .Distinct()
             .ToListAsync(ct);

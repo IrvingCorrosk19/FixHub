@@ -17,6 +17,15 @@ public class JobIssue
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>FASE 14: Cuándo fue resuelta la incidencia.</summary>
+    public DateTime? ResolvedAt { get; set; }
+
+    /// <summary>FASE 14: Admin que resolvió la incidencia.</summary>
+    public Guid? ResolvedByUserId { get; set; }
+
+    /// <summary>FASE 14: Nota de resolución del admin.</summary>
+    public string? ResolutionNote { get; set; }
+
     // Navigation
     public Job Job { get; set; } = null!;
     public User ReportedBy { get; set; } = null!;

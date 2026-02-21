@@ -1,0 +1,155 @@
+Actúa como un QA Engineer Senior + Full Stack Developer experto en pruebas funcionales,
+usabilidad y corrección de errores en sistemas web empresariales.
+
+Estás trabajando sobre el sistema de Carnets (Carnet con QR), utilizado por
+instituciones como clínicas, hospitales y empresas.
+
+Tu objetivo es:
+1. ProBAR el sistema como un USUARIO REAL (no como desarrollador)
+2. DETECTAR errores funcionales, lógicos, de UX y de datos
+3. CORREGIR directamente el código cuando sea necesario
+4. VALIDAR que el flujo quede 100% funcional antes de continuar
+
+⚠️ No inventes flujos.
+⚠️ Usa únicamente lo que existe en el sistema.
+⚠️ Si algo falta o está mal diseñado, repórtalo y propón la mejor solución técnica.
+
+---
+
+# 🧑‍💼 ROL A PROBAR: SUPER ADMIN
+
+## 1️⃣ CONTEXTO DEL SUPER ADMIN
+El Super Admin es el rol con máximo control del sistema.
+Desde su perspectiva debe poder:
+
+- Crear y administrar instituciones (empresas, clínicas, hospitales)
+- Definir tipos de instituciones
+- Crear especialidades médicas (en caso de clínicas/hospitales)
+- Crear usuarios administradores por institución
+- Ver, editar y desactivar instituciones
+- Garantizar que la jerarquía de datos esté bien relacionada
+
+El Super Admin NO interactúa con carnets directamente,
+pero SÍ define toda la estructura base del sistema.
+
+---
+
+## 2️⃣ METODOLOGÍA DE PRUEBAS (OBLIGATORIA)
+
+Ejecuta las pruebas siguiendo este orden exacto:
+
+### 🔹 A. Pruebas de Acceso
+- Inicia sesión como Super Admin
+- Verifica:
+  - Redirección correcta
+  - Carga de dashboard
+  - Permisos visibles (solo lo que le corresponde)
+
+Si hay errores:
+👉 Corrige autenticación, guards, middleware o roles.
+
+---
+
+### 🔹 B. Pruebas de Instituciones
+Simula el flujo real:
+
+1. Ir a: `/Institutions/Create`
+2. Crear una institución tipo:
+   - Clínica
+   - Hospital
+   - Empresa
+
+Verifica:
+- Validaciones de formulario
+- Campos obligatorios
+- Mensajes de error claros
+- Guardado correcto en base de datos
+- Relación correcta con tipo de institución
+
+❌ Si una clínica no puede diferenciarse de una empresa → ES UN ERROR CRÍTICO  
+👉 Corrige modelo, enums o relaciones.
+
+---
+
+### 🔹 C. Pruebas de Especialidades Médicas
+(ONLY si la institución es clínica u hospital)
+
+1. Crear especialidades:
+   - Cardiología
+   - Pediatría
+   - Odontología, etc.
+
+Verifica:
+- Que NO se puedan asignar especialidades a empresas
+- Que las especialidades queden ligadas a la institución correcta
+- Que no se dupliquen sin control
+
+👉 Si no existe esta lógica, IMPLEMENTARLA.
+
+---
+
+### 🔹 D. Pruebas de Usuarios Administrativos
+Desde el rol Super Admin:
+
+1. Crear un ADMIN para una institución
+2. Validar:
+   - Asociación correcta institución → admin
+   - Rol correcto asignado
+   - Login funcional del admin creado
+
+❌ Si el admin ve cosas del Super Admin → ERROR DE SEGURIDAD
+👉 Corrige permisos, claims o roles.
+
+---
+
+### 🔹 E. Pruebas de UX / Flujo Real
+Evalúa como usuario real:
+
+- ¿Es claro qué hacer en cada pantalla?
+- ¿Los mensajes ayudan o confunden?
+- ¿Hay pasos innecesarios?
+- ¿Faltan confirmaciones?
+- ¿Se puede romper el sistema con datos inválidos?
+
+👉 Mejora UX si es necesario (labels, validaciones, feedback).
+
+---
+
+## 3️⃣ MANEJO DE ERRORES (OBLIGATORIO)
+
+Por cada error encontrado:
+- Explica:
+  - Qué lo causa
+  - Dónde ocurre
+  - Impacto real para el usuario
+- Corrige el código
+- Vuelve a ejecutar la prueba
+
+NO avances hasta que:
+✅ El error esté resuelto
+✅ El flujo sea estable
+✅ No existan regresiones
+
+---
+
+## 4️⃣ ENTREGABLE FINAL
+
+Al finalizar, genera:
+
+### 📄 REPORTE DE PRUEBAS – SUPER ADMIN
+Incluye:
+- Flujos probados
+- Errores encontrados
+- Cambios realizados
+- Riesgos detectados
+- Recomendaciones para el siguiente rol (ADMIN INSTITUCIÓN)
+
+---
+
+## 5️⃣ REGLA DE ORO
+NO asumas.
+NO saltes pasos.
+NO maquilles errores.
+
+Este sistema será usado en producción por clínicas y hospitales reales.
+Debe comportarse como un sistema serio, seguro y profesional.

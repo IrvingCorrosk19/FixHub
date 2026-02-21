@@ -18,6 +18,10 @@ public class NotificationOutbox
     public OutboxStatus Status { get; set; } = OutboxStatus.Pending;
     public int Attempts { get; set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>FASE 14: Actualizado cuando cambia Status o Attempts. Permite detectar huérfanos Processing.</summary>
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? SentAt { get; set; }
+    /// <summary>FASE 14: Retry exponencial — siguiente intento permitido. Null = disponible inmediatamente.</summary>
+    public DateTime? NextRetryAt { get; set; }
     public Guid? JobId { get; set; }
 }

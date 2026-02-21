@@ -45,24 +45,43 @@ public class AdminUpdateJobStatusCommandHandler(IApplicationDbContext db, IDashb
 
         var statusBefore = job.Status.ToString();
         var now = DateTime.UtcNow;
-        job.Status = newStatus;
 
-        if (newStatus == JobStatus.InProgress && job.Assignment is not null && job.Assignment.StartedAt is null)
-            job.Assignment.StartedAt = now;
-        if (newStatus == JobStatus.Completed)
+        // FASE 14: Transacción explícita + protección contra concurrencia (xmin)
+        await using var transaction = await db.BeginTransactionAsync(ct);
+        try
         {
-            job.CompletedAt = now;
-            if (job.Assignment is not null)
-                job.Assignment.CompletedAt = now;
-        }
-        if (newStatus == JobStatus.Cancelled)
-            job.CancelledAt = now;
+            job.Status = newStatus;
 
-        await db.SaveChangesAsync(ct);
+            if (newStatus == JobStatus.InProgress && job.Assignment is not null && job.Assignment.StartedAt is null)
+                job.Assignment.StartedAt = now;
+            if (newStatus == JobStatus.Completed)
+            {
+                job.CompletedAt = now;
+                if (job.Assignment is not null)
+                    job.Assignment.CompletedAt = now;
+            }
+            if (newStatus == JobStatus.Cancelled)
+                job.CancelledAt = now;
+
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync(ct);
+            return Result<JobDto>.Failure("Concurrent modification detected. Please retry.", "CONCURRENCY_CONFLICT");
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+
         dashboardCache.Invalidate();
         logger.LogInformation("Job status changed. JobId={JobId} StatusBefore={StatusBefore} StatusAfter={StatusAfter}",
             job.Id, statusBefore, newStatus.ToString());
 
+        // Notificaciones FUERA de la transacción (Outbox pattern)
         if (newStatus == JobStatus.InProgress)
         {
             await notifications.NotifyAsync(job.CustomerId, NotificationType.JobStarted, "El técnico está en camino.", job.Id, ct);

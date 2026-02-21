@@ -151,21 +151,31 @@ public class GetOpsDashboardQueryHandler(IApplicationDbContext db)
             return new DashboardAlertJobDto(j.Id, j.Title, j.FullName, j.Status.ToString(), j.CreatedAt, elapsed, "open_overdue", severity);
         }).ToList();
 
-        // InProgress demasiado tiempo
+        // InProgress demasiado tiempo — BUG-3 FIX: usar Assignment.StartedAt (no j.CreatedAt)
+        // Evita falsos positivos: job creado hace 3h pero iniciado hace 5 min no debe alertar.
         var inProgressOverdueRaw = await db.Jobs
-            .Include(j => j.Customer)
-            .Where(j => j.Status == JobStatus.InProgress && j.CreatedAt <= inProgressOverdueThreshold)
-            .OrderBy(j => j.CreatedAt)
+            .Where(j => j.Status == JobStatus.InProgress
+                && j.Assignment != null
+                && j.Assignment.StartedAt != null
+                && j.Assignment.StartedAt <= inProgressOverdueThreshold)
+            .OrderBy(j => j.Assignment!.StartedAt)
             .Take(AlertsLimit)
-            .Select(j => new { j.Id, j.Title, j.Customer.FullName, j.Status, j.CreatedAt })
+            .Select(j => new
+            {
+                j.Id,
+                j.Title,
+                CustomerName = j.Customer.FullName,
+                j.Status,
+                StartedAt = j.Assignment!.StartedAt!.Value
+            })
             .ToListAsync(ct);
 
         var inProgressOverdue = inProgressOverdueRaw.Select(j =>
         {
-            var elapsed = (int)(utcNow - j.CreatedAt).TotalMinutes;
+            var elapsed = (int)(utcNow - j.StartedAt).TotalMinutes;
             // InProgress >3h=CRITICAL, >2h=WARNING
             var severity = elapsed >= 180 ? "CRITICAL" : "WARNING";
-            return new DashboardAlertJobDto(j.Id, j.Title, j.FullName, j.Status.ToString(), j.CreatedAt, elapsed, "inprogress_overdue", severity);
+            return new DashboardAlertJobDto(j.Id, j.Title, j.CustomerName, j.Status.ToString(), j.StartedAt, elapsed, "inprogress_overdue", severity);
         }).ToList();
 
         // Jobs con incidencias últimas 24h (sin duplicar) — siempre CRITICAL
@@ -187,12 +197,20 @@ public class GetOpsDashboardQueryHandler(IApplicationDbContext db)
             return new DashboardAlertJobDto(j.Id, j.Title, j.FullName, j.Status.ToString(), j.CreatedAt, elapsed, "issue", "CRITICAL");
         }).ToList();
 
+        // FASE 14: Excluir del dashboard jobs con alertas SLA ya resueltas.
+        var resolvedJobIds = await db.JobAlerts
+            .Where(a => a.IsResolved)
+            .Select(a => a.JobId)
+            .Distinct()
+            .ToListAsync(ct);
+
         // Ordenar: CRITICAL primero, luego WARNING, luego INFO; dentro de cada grupo por elapsed desc
         static int SeverityOrder(string s) => s switch { "CRITICAL" => 0, "WARNING" => 1, _ => 2 };
 
         var alerts = openOverdue
             .Concat(inProgressOverdue)
             .Concat(issueAlerts)
+            .Where(a => !resolvedJobIds.Contains(a.JobId))   // Solo alertas activas
             .DistinctBy(a => a.JobId)
             .OrderBy(a => SeverityOrder(a.Severity))
             .ThenByDescending(a => a.ElapsedMinutes)
@@ -227,7 +245,10 @@ public class GetOpsDashboardQueryHandler(IApplicationDbContext db)
                 i.ReportedBy.FullName,
                 i.Reason,
                 i.Detail,
-                i.CreatedAt))
+                i.CreatedAt,
+                i.ResolvedAt,
+                i.ResolvedByUserId,
+                i.ResolutionNote))
             .ToListAsync(ct);
 
         return Result<OpsDashboardDto>.Success(new OpsDashboardDto(

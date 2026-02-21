@@ -35,6 +35,11 @@ public class ProposalConfiguration : IEntityTypeConfiguration<Proposal>
             .HasColumnName("created_at")
             .HasDefaultValueSql("NOW()");
 
+        // FASE 14: Concurrencia optimista via xmin (columna de sistema PostgreSQL).
+#pragma warning disable CS0618 // UseXminAsConcurrencyToken obsoleto en Npgsql 8+; comportamiento idéntico, migrar cuando Npgsql lo elimine
+        builder.UseXminAsConcurrencyToken();
+#pragma warning restore CS0618
+
         // Un técnico solo puede enviar UNA propuesta por trabajo
         builder.HasIndex(p => new { p.JobId, p.TechnicianId }).IsUnique();
 

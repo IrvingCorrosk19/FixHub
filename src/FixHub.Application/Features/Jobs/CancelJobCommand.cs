@@ -36,26 +36,48 @@ public class CancelJobCommandHandler(IApplicationDbContext db, IDashboardCacheIn
         if (job.Status == JobStatus.Cancelled)
             return Result<JobDto>.Failure("Job is already cancelled.", "INVALID_STATUS");
 
-        var statusBefore = job.Status.ToString();
-        job.Status = JobStatus.Cancelled;
-        job.CancelledAt = DateTime.UtcNow;
-
-        await db.SaveChangesAsync(ct);
-        dashboardCache.Invalidate();
-        logger.LogInformation("Job status changed. JobId={JobId} StatusBefore={StatusBefore} StatusAfter=Cancelled", job.Id, statusBefore);
-
-        // Notificar al Cliente (FASE 13)
-        await notifications.NotifyAsync(job.CustomerId, FixHub.Domain.Enums.NotificationType.JobCancelled,
-            "Tu solicitud ha sido cancelada.", job.Id, ct);
-
+        // Pre-cargar datos de notificación antes de abrir la transacción (solo lectura)
+        Guid? assignedTechId = null;
         if (job.Assignment is not null)
         {
             var prop = await db.Proposals.FirstOrDefaultAsync(p => p.Id == job.Assignment.ProposalId, ct);
-            if (prop is not null)
-                await notifications.NotifyAsync(prop.TechnicianId, FixHub.Domain.Enums.NotificationType.JobCancelled,
-                    $"El cliente canceló la solicitud: {job.Title}", job.Id, ct);
+            assignedTechId = prop?.TechnicianId;
         }
         var adminIds = await db.Users.Where(u => u.Role == UserRole.Admin).Select(u => u.Id).ToListAsync(ct);
+
+        // FASE 14: Transacción explícita + protección contra concurrencia (xmin)
+        var statusBefore = job.Status.ToString();
+        await using var transaction = await db.BeginTransactionAsync(ct);
+        try
+        {
+            job.Status = JobStatus.Cancelled;
+            job.CancelledAt = DateTime.UtcNow;
+
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync(ct);
+            return Result<JobDto>.Failure("Concurrent modification detected. Please retry.", "CONCURRENCY_CONFLICT");
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+
+        dashboardCache.Invalidate();
+        logger.LogInformation("Job status changed. JobId={JobId} StatusBefore={StatusBefore} StatusAfter=Cancelled", job.Id, statusBefore);
+
+        // Notificaciones FUERA de la transacción (Outbox pattern: tolerante a fallos)
+        await notifications.NotifyAsync(job.CustomerId, FixHub.Domain.Enums.NotificationType.JobCancelled,
+            "Tu solicitud ha sido cancelada.", job.Id, ct);
+
+        if (assignedTechId.HasValue)
+            await notifications.NotifyAsync(assignedTechId.Value, FixHub.Domain.Enums.NotificationType.JobCancelled,
+                $"El cliente canceló la solicitud: {job.Title}", job.Id, ct);
+
         if (adminIds.Count > 0)
             await notifications.NotifyManyAsync(adminIds, FixHub.Domain.Enums.NotificationType.JobCancelled,
                 $"Solicitud cancelada: {job.Title}", job.Id, ct);

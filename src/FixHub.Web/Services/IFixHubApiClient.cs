@@ -40,6 +40,8 @@ public interface IFixHubApiClient
 
     // Admin (incidencias)
     Task<ApiResult<PagedResult<IssueDto>>> ListJobIssuesAsync(int page, int pageSize);
+    Task<ApiResult<object>> ResolveAlertAsync(Guid alertId);
+    Task<ApiResult<object>> ResolveJobIssueAsync(Guid issueId, string resolutionNote);
 
     // Admin (dashboard)
     Task<ApiResult<OpsDashboardDto>> GetAdminDashboardAsync();

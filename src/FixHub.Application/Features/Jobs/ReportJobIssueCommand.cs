@@ -35,6 +35,7 @@ public class ReportJobIssueCommandValidator : AbstractValidator<ReportJobIssueCo
 }
 
 // ─── DTO ──────────────────────────────────────────────────────────────────────
+// FASE 14: ResolvedAt, ResolvedByUserId, ResolutionNote son opcionales (backward-compatible).
 public record IssueDto(
     Guid Id,
     Guid JobId,
@@ -42,7 +43,10 @@ public record IssueDto(
     string ReportedByName,
     string Reason,
     string? Detail,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    DateTime? ResolvedAt = null,
+    Guid? ResolvedByUserId = null,
+    string? ResolutionNote = null
 );
 
 // ─── Handler ──────────────────────────────────────────────────────────────────

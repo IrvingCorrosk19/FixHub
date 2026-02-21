@@ -19,6 +19,8 @@ public class JobAlertConfiguration : IEntityTypeConfiguration<JobAlert>
         builder.Property(a => a.Message).HasColumnName("message").HasMaxLength(500).IsRequired();
         builder.Property(a => a.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()").IsRequired();
         builder.Property(a => a.IsResolved).HasColumnName("is_resolved").HasDefaultValue(false).IsRequired();
+        builder.Property(a => a.ResolvedAt).HasColumnName("resolved_at");
+        builder.Property(a => a.ResolvedByUserId).HasColumnName("resolved_by_user_id");
 
         builder.HasIndex(a => a.JobId);
         builder.HasIndex(a => new { a.JobId, a.Type, a.IsResolved });

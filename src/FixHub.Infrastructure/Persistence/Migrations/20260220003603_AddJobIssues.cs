@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,34 +11,7 @@ namespace FixHub.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_AuditLog",
-                table: "AuditLog");
-
-            migrationBuilder.RenameTable(
-                name: "AuditLog",
-                newName: "audit_logs");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_AuditLog_created_at_utc",
-                table: "audit_logs",
-                newName: "IX_audit_logs_created_at_utc");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_AuditLog_correlation_id",
-                table: "audit_logs",
-                newName: "IX_audit_logs_correlation_id");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_AuditLog_action",
-                table: "audit_logs",
-                newName: "IX_audit_logs_action");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_audit_logs",
-                table: "audit_logs",
-                column: "id");
-
+            // audit_logs ya existe desde AddAuditLogs; no renombrar AuditLog
             migrationBuilder.CreateTable(
                 name: "job_issues",
                 columns: table => new
@@ -91,36 +64,7 @@ namespace FixHub.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "job_issues");
-
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_audit_logs",
-                table: "audit_logs");
-
-            migrationBuilder.RenameTable(
-                name: "audit_logs",
-                newName: "AuditLog");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_audit_logs_created_at_utc",
-                table: "AuditLog",
-                newName: "IX_AuditLog_created_at_utc");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_audit_logs_correlation_id",
-                table: "AuditLog",
-                newName: "IX_AuditLog_correlation_id");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_audit_logs_action",
-                table: "AuditLog",
-                newName: "IX_AuditLog_action");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_AuditLog",
-                table: "AuditLog",
-                column: "id");
+            migrationBuilder.DropTable(name: "job_issues");
         }
     }
 }
