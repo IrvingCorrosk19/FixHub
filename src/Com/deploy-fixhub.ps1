@@ -22,9 +22,9 @@ Write-Host ""
 Write-Host "FixHub usara: puerto 8084, contenedores fixhub_*, red fixhub_net" -ForegroundColor Cyan
 Write-Host ""
 
-# PASO 1: Directorio y repo
+# PASO 1: Directorio y repo (fuerza actualizacion, descarta cambios locales)
 Write-Host "PASO 1: Clonando/actualizando FixHub en $remoteDir..." -ForegroundColor Yellow
-$cmd1 = "mkdir -p $remoteDir && cd $remoteDir && if [ -d .git ]; then git pull origin main 2>/dev/null || git pull origin master 2>/dev/null || git pull; else git clone https://github.com/IrvingCorrosk19/FixHub.git .; fi && ls -la docker-compose.yml 2>/dev/null || echo 'FALTA: docker-compose.yml'"
+$cmd1 = "mkdir -p $remoteDir && cd $remoteDir && if [ -d .git ]; then git fetch origin; git reset --hard origin/main 2>/dev/null || git reset --hard origin/master; else git clone https://github.com/IrvingCorrosk19/FixHub.git .; fi && ls -la docker-compose.yml 2>/dev/null || echo 'FALTA: docker-compose.yml'"
 $result1 = & $plink -ssh -pw $password -batch -hostkey $hostkey $hostname $cmd1 2>&1
 Write-Host $result1
 Write-Host ""
