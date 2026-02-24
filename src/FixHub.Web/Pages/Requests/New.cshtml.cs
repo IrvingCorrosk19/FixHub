@@ -41,6 +41,8 @@ public class NewModel(IFixHubApiClient apiClient) : PageModel
             TempData["Error"] = "Solo los clientes pueden solicitar servicios.";
             return RedirectToPage("/Index");
         }
+        if (TempData["Error"] is string tdError)
+            ErrorMessage = tdError;
         return Page();
     }
 
@@ -64,6 +66,7 @@ public class NewModel(IFixHubApiClient apiClient) : PageModel
         if (!result.IsSuccess)
         {
             ErrorMessage = ErrorMessageHelper.GetUserFriendlyMessage(result.ErrorMessage, result.StatusCode);
+            TempData["Error"] = ErrorMessage;
             return Page();
         }
 

@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FixHub.API.Controllers.v1;
 
 [Authorize]
-public class JobsController(ISender mediator) : ApiControllerBase
+public class JobsController(ISender mediator, ILogger<JobsController> logger) : ApiControllerBase
 {
     /// <summary>Create a new job. [Customer only]</summary>
     [HttpPost]
@@ -21,6 +21,14 @@ public class JobsController(ISender mediator) : ApiControllerBase
         [FromBody] CreateJobRequest request,
         CancellationToken ct)
     {
+        if (request is null)
+        {
+            logger.LogWarning("[Jobs] Create rechazado: cuerpo de la petición nulo o inválido.");
+            return BadRequest(new ProblemDetails { Title = "Cuerpo de la petición inválido (JSON esperado).", Status = 400 });
+        }
+        logger.LogInformation(
+            "[Jobs] Create recibido: CategoryId={CategoryId}, TitleLen={TitleLen}, DescLen={DescLen}, AddressLen={AddressLen}, UserId={UserId}",
+            request.CategoryId, request.Title?.Length ?? 0, request.Description?.Length ?? 0, request.AddressText?.Length ?? 0, CurrentUserId);
         var command = new CreateJobCommand(
             CurrentUserId,
             request.CategoryId,

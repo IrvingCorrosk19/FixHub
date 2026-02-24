@@ -5,6 +5,7 @@ using FixHub.Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FixHub.Application.Features.Jobs;
 
@@ -65,7 +66,11 @@ public class CreateJobCommandValidator : AbstractValidator<CreateJobCommand>
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
-public class CreateJobCommandHandler(IApplicationDbContext db, IDashboardCacheInvalidator dashboardCache, INotificationService notifications)
+public class CreateJobCommandHandler(
+    IApplicationDbContext db,
+    IDashboardCacheInvalidator dashboardCache,
+    INotificationService notifications,
+    ILogger<CreateJobCommandHandler> logger)
     : IRequestHandler<CreateJobCommand, Result<JobDto>>
 {
     public async Task<Result<JobDto>> Handle(CreateJobCommand req, CancellationToken ct)
@@ -83,9 +88,11 @@ public class CreateJobCommandHandler(IApplicationDbContext db, IDashboardCacheIn
             return Result<JobDto>.Failure("Customer not found.", "USER_NOT_FOUND");
 
         // Buscar técnico ANTES de abrir la transacción (lectura de solo lectura)
+        // Solo auto-asignar si el perfil tiene User cargado (evita NullReferenceException si FK rota)
         var techProfile = await db.TechnicianProfiles
             .Include(tp => tp.User)
             .FirstOrDefaultAsync(tp => tp.Status == TechnicianStatus.Approved, ct);
+        var canAutoAssign = techProfile?.User != null;
 
         // FASE 14: Transacción explícita — un único SaveChanges, rollback en cualquier error
         await using var transaction = await db.BeginTransactionAsync(ct);
@@ -112,15 +119,14 @@ public class CreateJobCommandHandler(IApplicationDbContext db, IDashboardCacheIn
             Guid? techId = null;
             string? techName = null;
 
-            // Auto-asignar al técnico aprobado si existe
-            if (techProfile != null)
+            if (canAutoAssign)
             {
                 var price = req.BudgetMin ?? req.BudgetMax ?? 1m;
                 var proposal = new Proposal
                 {
                     Id = Guid.NewGuid(),
                     JobId = job.Id,
-                    TechnicianId = techProfile.UserId,
+                    TechnicianId = techProfile!.UserId,
                     Price = price,
                     Message = "Asignación automática",
                     Status = ProposalStatus.Accepted,
@@ -139,39 +145,58 @@ public class CreateJobCommandHandler(IApplicationDbContext db, IDashboardCacheIn
                 job.Status = JobStatus.Assigned;
                 job.AssignedAt = DateTime.UtcNow;
                 techId = techProfile.UserId;
-                techName = techProfile.User.FullName;
+                techName = techProfile.User!.FullName;
             }
 
             await db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
-            dashboardCache.Invalidate();
 
-            // Notificaciones FUERA de la transacción (Outbox pattern: tolerante a fallos)
-            await notifications.NotifyAsync(req.CustomerId, NotificationType.JobCreated,
-                "Hemos recibido tu solicitud. Te asignaremos un técnico pronto.", job.Id, ct);
+            // Construir DTO sin tocar navegaciones (evita excepciones por lazy load o consultas post-commit)
+            var dto = new JobDto(
+                job.Id, job.CustomerId, customer.FullName, job.CategoryId, category.Name,
+                job.Title, job.Description, job.AddressText, job.Lat, job.Lng,
+                job.Status.ToString(), job.BudgetMin, job.BudgetMax, job.CreatedAt,
+                techId, techName, job.AssignedAt, null, job.CompletedAt, job.CancelledAt);
 
-            var adminIds = await db.Users
-                .Where(u => u.Role == UserRole.Admin)
-                .Select(u => u.Id)
-                .ToListAsync(ct);
-            if (adminIds.Count > 0)
-                await notifications.NotifyManyAsync(adminIds, NotificationType.JobCreated,
-                    $"Nueva solicitud: {job.Title}", job.Id, ct);
-
-            if (techProfile != null)
+            // Cache y notificaciones no deben tumbar la creación (log y seguir)
+            try
             {
-                await notifications.NotifyAsync(req.CustomerId, NotificationType.JobAssigned,
-                    "Tu solicitud ha sido asignada a un técnico.", job.Id, ct);
-                await notifications.NotifyAsync(techProfile.UserId, NotificationType.JobAssigned,
-                    $"Has sido asignado a: {job.Title}", job.Id, ct);
+                dashboardCache.Invalidate();
+                await notifications.NotifyAsync(req.CustomerId, NotificationType.JobCreated,
+                    "Hemos recibido tu solicitud. Te asignaremos un técnico pronto.", job.Id, ct);
+
+                var adminIds = await db.Users
+                    .Where(u => u.Role == UserRole.Admin)
+                    .Select(u => u.Id)
+                    .ToListAsync(ct);
+                if (adminIds.Count > 0)
+                    await notifications.NotifyManyAsync(adminIds, NotificationType.JobCreated,
+                        $"Nueva solicitud: {job.Title}", job.Id, ct);
+
+                if (canAutoAssign)
+                {
+                    await notifications.NotifyAsync(req.CustomerId, NotificationType.JobAssigned,
+                        "Tu solicitud ha sido asignada a un técnico.", job.Id, ct);
+                    await notifications.NotifyAsync(techProfile!.UserId, NotificationType.JobAssigned,
+                        $"Has sido asignado a: {job.Title}", job.Id, ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "CreateJob: cache o notificaciones fallaron tras crear job {JobId}. La solicitud se creó correctamente.", job.Id);
             }
 
-            return Result<JobDto>.Success(job.ToDto(customer.FullName, category.Name, techId, techName));
+            return Result<JobDto>.Success(dto);
         }
         catch (DbUpdateConcurrencyException)
         {
             await transaction.RollbackAsync(ct);
             return Result<JobDto>.Failure("Concurrent modification detected. Please retry.", "CONCURRENCY_CONFLICT");
+        }
+        catch (DbUpdateException)
+        {
+            await transaction.RollbackAsync(ct);
+            return Result<JobDto>.Failure("No se pudo guardar la solicitud. Comprueba los datos e inténtalo de nuevo.", "DB_UPDATE_ERROR");
         }
         catch (Exception)
         {

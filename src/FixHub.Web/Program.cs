@@ -91,15 +91,35 @@ static async Task EnsureApiRunningAsync(string apiBaseUrl, ILogger logger)
         return;
     }
 
-    logger.LogInformation("[FixHub.Web] Iniciando FixHub.API... (puede tardar unos segundos)");
+    logger.LogInformation("[FixHub.Web] Iniciando FixHub.API... (puede tardar unos segundos). Los logs de la API aparecerán abajo.");
     var pi = new System.Diagnostics.ProcessStartInfo
     {
         FileName = "dotnet",
         Arguments = $"run --project \"{Path.GetFullPath(apiProj)}\"",
-        UseShellExecute = true,
-        CreateNoWindow = false
+        UseShellExecute = false,
+        CreateNoWindow = false,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true
     };
-    System.Diagnostics.Process.Start(pi);
+    var apiProcess = System.Diagnostics.Process.Start(pi);
+    if (apiProcess != null)
+    {
+        void ForwardLines(System.IO.StreamReader reader, string prefix)
+        {
+            try
+            {
+                while (!reader.EndOfStream && !apiProcess.HasExited)
+                {
+                    var line = reader.ReadLine();
+                    if (!string.IsNullOrWhiteSpace(line))
+                        logger.LogInformation("{Prefix}{Line}", prefix, line);
+                }
+            }
+            catch { /* proceso terminado */ }
+        }
+        _ = Task.Run(() => ForwardLines(apiProcess.StandardOutput, "[FixHub.API] "));
+        _ = Task.Run(() => ForwardLines(apiProcess.StandardError, "[FixHub.API stderr] "));
+    }
 
     for (var i = 0; i < 20; i++)
     {

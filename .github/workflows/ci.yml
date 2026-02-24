@@ -1,0 +1,119 @@
+# FixHub — CI pipeline (Build, Test, SAST, Dependency scan, Secrets scan, Container scan)
+# Branch: audit/fixhub-100
+# No secretos en este archivo; usar GitHub Secrets / Variables para cualquier valor sensible.
+
+name: CI
+
+on:
+  push:
+    branches: [main, master, audit/fixhub-100]
+  pull_request:
+    branches: [main, master, audit/fixhub-100]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore FixHub.sln
+
+      - name: Build
+        run: dotnet build FixHub.sln --no-restore -c Release
+
+      - name: Test (Integration with Testcontainers)
+        run: dotnet test tests/FixHub.IntegrationTests/FixHub.IntegrationTests.csproj --no-build -c Release --verbosity normal
+        env:
+          DOCKER_HOST: unix:///var/run/docker.sock
+        # Testcontainers requiere Docker; en GitHub-hosted runner está disponible
+
+  codeql:
+    name: CodeQL (SAST)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          # C# puede analizarse sin build (default en repos nuevos)
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:csharp'
+
+  dependency-scan:
+    name: Dependency scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore FixHub.sln
+
+      - name: List vulnerable packages (audit)
+        run: |
+          dotnet list package --vulnerable --include-transitive 2>/dev/null || true
+          # Exit 0 para no fallar el job; revisar salida en Actions
+        continue-on-error: true
+
+  secrets-scan:
+    name: Secrets scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        # Opcional: GITLEAKS_LICENSE para uso empresarial. En público puede no ser necesario.
+
+  container-scan:
+    name: Container scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image (no push)
+        run: docker build -f src/FixHub.API/Dockerfile -t fixhub-api:audit .
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'fixhub-api:audit'
+          format: 'sarif'
+          output: 'trivy-api-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-api-results.sarif'
+          category: 'trivy-api'
+        continue-on-error: true

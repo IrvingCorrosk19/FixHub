@@ -29,8 +29,13 @@ public class FixHubApiClient(HttpClient http, ILogger<FixHubApiClient> log) : IF
         PostAsync<AuthResponse>("api/v1/auth/login", request);
 
     // ─── Jobs ─────────────────────────────────────────────────────────────────
-    public Task<ApiResult<JobDto>> CreateJobAsync(CreateJobRequest request) =>
-        PostAsync<JobDto>("api/v1/jobs", request);
+    public Task<ApiResult<JobDto>> CreateJobAsync(CreateJobRequest request)
+    {
+        log.LogInformation(
+            "[FixHubApi] CreateJob enviando: POST api/v1/jobs | CategoryId={CategoryId}, TitleLen={TitleLen}, DescLen={DescLen}, AddressLen={AddressLen}",
+            request.CategoryId, request.Title?.Length ?? 0, request.Description?.Length ?? 0, request.AddressText?.Length ?? 0);
+        return PostAsync<JobDto>("api/v1/jobs", request);
+    }
 
     public Task<ApiResult<JobDto>> GetJobAsync(Guid jobId) =>
         GetAsync<JobDto>($"api/v1/jobs/{jobId}");
