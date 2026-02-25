@@ -1,21 +1,26 @@
 {
   "info": {
     "name": "FixHub AUDIT E2E",
-    "description": "Suite E2E para auditoría production-grade. Ejecutar contra API local (baseUrl). Datos de prueba: prefijo AUDIT_ en emails/títulos cuando se documente.",
+    "description": "Batería E2E por API: Customer, Technician, Admin, negativas e integridad. Prefijo AUDIT_<timestamp>. Ver docs/AUDIT/05_E2E_EXECUTION.md",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:5100" },
+    { "key": "auditPrefix", "value": "AUDIT_" },
+    { "key": "customerEmail", "value": "" },
     { "key": "token", "value": "" },
+    { "key": "technicianEmail", "value": "" },
+    { "key": "technicianToken", "value": "" },
     { "key": "tokenAdmin", "value": "" },
     { "key": "jobId", "value": "" },
     { "key": "proposalId", "value": "" },
-    { "key": "notificationId", "value": "" },
-    { "key": "auditPrefix", "value": "AUDIT_" }
+    { "key": "customer2Email", "value": "" },
+    { "key": "customer2Token", "value": "" },
+    { "key": "notificationId", "value": "" }
   ],
   "item": [
     {
-      "name": "0. Health",
+      "name": "0. Health & Prep",
       "item": [
         {
           "name": "GET Health",
@@ -23,7 +28,7 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/api/v1/health",
-            "description": "Sin auth. Esperado: 200, body con status healthy."
+            "description": "FASE 1. Esperado: 200, status healthy, database connected."
           }
         }
       ]
@@ -32,80 +37,151 @@
       "name": "1. Auth",
       "item": [
         {
-          "name": "Register Customer (AUDIT)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "  var j = pm.response.json();",
-                  "  if (j.token) pm.collectionVariables.set('token', j.token);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
+          "name": "Register Customer (role 1)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  var j = pm.response.json();",
+                "  if (j.token) pm.collectionVariables.set('token', j.token);",
+                "  if (j.email) pm.collectionVariables.set('customerEmail', j.email);",
+                "}"
+              ],
+              "type": "text/javascript"
             }
-          ],
+          }],
           "request": {
             "method": "POST",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"{{auditPrefix}} Customer\",\n  \"email\": \"{{auditPrefix}}{{$guid}}@audit.local\",\n  \"password\": \"Password1!\",\n  \"role\": 1,\n  \"phone\": null\n}"
+              "raw": "{\n  \"fullName\": \"{{auditPrefix}} Customer\",\n  \"email\": \"{{auditPrefix}}_{{$guid}}@audit.local\",\n  \"password\": \"Password1!\",\n  \"role\": 1,\n  \"phone\": null\n}"
             },
             "url": "{{baseUrl}}/api/v1/auth/register",
-            "description": "role 1 = Customer. Esperado: 201, token en response."
+            "description": "FASE 2.1. role 1 = Customer. Guarda token y customerEmail."
           }
         },
         {
-          "name": "Login (Customer)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "  var j = pm.response.json();",
-                  "  if (j.token) pm.collectionVariables.set('token', j.token);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
+          "name": "Login Customer",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) {",
+                "  var j = pm.response.json();",
+                "  if (j.token) pm.collectionVariables.set('token', j.token);",
+                "}"
+              ],
+              "type": "text/javascript"
             }
-          ],
+          }],
           "request": {
             "method": "POST",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{auditPrefix}}{{$guid}}@audit.local\",\n  \"password\": \"Password1!\"\n}"
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"Password1!\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/auth/login",
-            "description": "Ajustar email al usado en Register. Guarda token en variable."
+            "description": "FASE 2.2. Usar customerEmail del Register. Guarda token."
+          }
+        },
+        {
+          "name": "Register Technician (role 2)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  var j = pm.response.json();",
+                "  if (j.token) pm.collectionVariables.set('technicianToken', j.token);",
+                "  if (j.email) pm.collectionVariables.set('technicianEmail', j.email);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{auditPrefix}} Technician\",\n  \"email\": \"{{auditPrefix}}_{{$guid}}@audit.local\",\n  \"password\": \"Password1!\",\n  \"role\": 2,\n  \"phone\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register",
+            "description": "FASE 3.1. role 2 = Technician. Guarda technicianToken y technicianEmail."
+          }
+        },
+        {
+          "name": "Login Technician",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) {",
+                "  var j = pm.response.json();",
+                "  if (j.token) pm.collectionVariables.set('technicianToken', j.token);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{technicianEmail}}\",\n  \"password\": \"Password1!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "FASE 3.2. Guarda technicianToken."
+          }
+        },
+        {
+          "name": "Login Admin (seed)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) {",
+                "  var j = pm.response.json();",
+                "  if (j.token) pm.collectionVariables.set('tokenAdmin', j.token);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "FASE 5.1. Setear adminEmail y adminPassword en environment (usuario seed). Solo local/SIT/QA."
           }
         }
       ]
     },
     {
-      "name": "2. Jobs",
+      "name": "2. Customer Flow",
       "item": [
         {
-          "name": "Create Job (Customer)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "  var j = pm.response.json();",
-                  "  if (j.id) pm.collectionVariables.set('jobId', j.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
+          "name": "Create Job (AUDIT_JOB_timestamp)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  var j = pm.response.json();",
+                "  if (j.id) pm.collectionVariables.set('jobId', j.id);",
+                "}"
+              ],
+              "type": "text/javascript"
             }
-          ],
+          }],
           "request": {
             "method": "POST",
             "header": [
@@ -114,120 +190,314 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"categoryId\": 1,\n  \"title\": \"{{auditPrefix}} Job\",\n  \"description\": \"E2E audit job\",\n  \"addressText\": \"123 Audit St\",\n  \"lat\": null,\n  \"lng\": null,\n  \"budgetMin\": 100,\n  \"budgetMax\": 200\n}"
+              "raw": "{\n  \"categoryId\": 1,\n  \"title\": \"{{auditPrefix}}_JOB_{{$timestamp}}\",\n  \"description\": \"E2E audit job\",\n  \"addressText\": \"123 Audit St\",\n  \"lat\": null,\n  \"lng\": null,\n  \"budgetMin\": 100,\n  \"budgetMax\": 200\n}"
             },
             "url": "{{baseUrl}}/api/v1/jobs",
-            "description": "Requiere token Customer. Esperado: 201."
+            "description": "FASE 2.3. Guarda jobId."
           }
         },
         {
-          "name": "List My Jobs (Customer)",
+          "name": "List My Jobs",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": "{{baseUrl}}/api/v1/jobs/mine?page=1&pageSize=20",
-            "description": "CustomerOnly. Esperado: 200, PagedResult."
+            "description": "FASE 2.4. Esperado: 200, PagedResult."
           }
         },
         {
-          "name": "Get Job by ID",
+          "name": "Get Job by ID (owner)",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}",
-            "description": "Ownership enforced in handler. Esperado: 200 si propio, 403 si ajeno."
+            "description": "FASE 2.5. Esperado: 200."
           }
         },
         {
-          "name": "Get Job Proposals",
+          "name": "[Neg] Register Customer 2 (for 403)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  var j = pm.response.json();",
+                "  if (j.email) pm.collectionVariables.set('customer2Email', j.email);",
+                "  if (j.token) pm.collectionVariables.set('customer2Token', j.token);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{auditPrefix}} Customer2\",\n  \"email\": \"{{auditPrefix}}_{{$guid}}@audit.local\",\n  \"password\": \"Password1!\",\n  \"role\": 1,\n  \"phone\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register",
+            "description": "Para prueba 2.6: Customer B intenta ver job de A."
+          }
+        },
+        {
+          "name": "Login Customer 2",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) {",
+                "  var j = pm.response.json();",
+                "  if (j.token) pm.collectionVariables.set('customer2Token', j.token);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customer2Email}}\",\n  \"password\": \"Password1!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Guarda customer2Token."
+          }
+        },
+        {
+          "name": "[Neg] Get Job by ID (other customer → 403)",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
-            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/proposals",
-            "description": "Customer: solo su job; Admin: todas. Esperado: 200."
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer2Token}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}",
+            "description": "FASE 2.6. Customer B pide job de A. Esperado: 403."
           }
         }
       ]
     },
     {
-      "name": "3. Proposals",
+      "name": "3. Technician Flow",
       "item": [
         {
-          "name": "Submit Proposal (Technician)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "  var j = pm.response.json();",
-                  "  if (j.id) pm.collectionVariables.set('proposalId', j.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
+          "name": "List Jobs (Technician)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{technicianToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs?page=1&pageSize=20",
+            "description": "FASE 3.3. Esperado: 200."
+          }
+        },
+        {
+          "name": "Submit Proposal",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  var j = pm.response.json();",
+                "  if (j.id) pm.collectionVariables.set('proposalId', j.id);",
+                "}"
+              ],
+              "type": "text/javascript"
             }
-          ],
+          }],
           "request": {
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              { "key": "Authorization", "value": "Bearer {{technicianToken}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"price\": 150,\n  \"message\": \"AUDIT proposal\"\n}"
+              "raw": "{\n  \"price\": 150,\n  \"message\": \"{{auditPrefix}} proposal\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/proposals",
-            "description": "TechnicianOnly. Esperado: 201."
+            "description": "FASE 3.4. Guarda proposalId."
           }
         },
         {
-          "name": "Accept Proposal (Admin)",
+          "name": "[Neg] Submit Proposal duplicate",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" } ],
-            "url": "{{baseUrl}}/api/v1/proposals/{{proposalId}}/accept",
-            "description": "Solo Admin. Esperado: 200."
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{technicianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 160,\n  \"message\": \"duplicate\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/proposals",
+            "description": "FASE 3.5. Esperado: 400 o 409, DUPLICATE_PROPOSAL."
+          }
+        },
+        {
+          "name": "[Neg] Submit Proposal job inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{technicianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 100,\n  \"message\": \"fake job\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/jobs/00000000-0000-0000-0000-000000000000/proposals",
+            "description": "FASE 3.6. Esperado: 404 o 400, JOB_NOT_FOUND."
           }
         }
       ]
     },
     {
-      "name": "4. Notifications",
+      "name": "4. Interaction (Admin assign, Tech start, Customer complete)",
+      "item": [
+        {
+          "name": "Customer - Get Job Proposals (own job)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/proposals",
+            "description": "FASE 4.1. Actual: puede devolver vacía (H04). Esperado tras fix: 200 con lista."
+          }
+        },
+        {
+          "name": "Admin - Accept Proposal",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/api/v1/proposals/{{proposalId}}/accept",
+            "description": "FASE 4.2. Solo Admin. Esperado: 200."
+          }
+        },
+        {
+          "name": "Technician - Start Job",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{technicianToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/start",
+            "description": "FASE 4.3. Esperado: 200."
+          }
+        },
+        {
+          "name": "Customer - Complete Job",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/complete",
+            "description": "FASE 4.4. Esperado: 200."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Admin Flow",
+      "item": [
+        {
+          "name": "Admin - List Jobs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs?page=1&pageSize=20",
+            "description": "FASE 5.2. Esperado: 200."
+          }
+        },
+        {
+          "name": "Admin - Get Job Proposals",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/proposals",
+            "description": "FASE 5.3. Esperado: 200."
+          }
+        },
+        {
+          "name": "Admin - Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/dashboard",
+            "description": "FASE 5.4. Esperado: 200."
+          }
+        },
+        {
+          "name": "[Neg] Customer → Admin Dashboard (403)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/dashboard",
+            "description": "FASE 5.5. Esperado: 403."
+          }
+        },
+        {
+          "name": "[Neg] Technician → Admin Dashboard (403)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{technicianToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/dashboard",
+            "description": "FASE 5.6. Esperado: 403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Negative (401, 403, 429)",
+      "item": [
+        {
+          "name": "[Neg] Register role=Admin (role 3)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{auditPrefix}} AdminAttempt\",\n  \"email\": \"{{auditPrefix}}_{{$guid}}@audit.local\",\n  \"password\": \"Password1!\",\n  \"role\": 3,\n  \"phone\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register",
+            "description": "FASE 6.1. Esperado tras fix: 400/403. Actual: 201 (H03)."
+          }
+        },
+        {
+          "name": "[Neg] Get jobs/mine sin token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/jobs/mine?page=1&pageSize=20",
+            "description": "FASE 6.5. Esperado: 401."
+          }
+        },
+        {
+          "name": "[Neg] Get jobs/mine token inválido (401)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer invalid.token.here" }],
+            "url": "{{baseUrl}}/api/v1/jobs/mine?page=1&pageSize=20",
+            "description": "FASE 6.4. Esperado: 401."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Notifications & Issues",
       "item": [
         {
           "name": "List Notifications",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": "{{baseUrl}}/api/v1/notifications?page=1&pageSize=20",
-            "description": "Solo propias (UserId). Esperado: 200."
+            "description": "Esperado: 200."
           }
         },
         {
           "name": "Unread Count",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": "{{baseUrl}}/api/v1/notifications/unread-count",
-            "description": "Esperado: 200, number."
+            "description": "Esperado: 200."
           }
         },
-        {
-          "name": "Mark Notification Read",
-          "request": {
-            "method": "POST",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
-            "url": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read",
-            "description": "Solo propietario. Esperado: 200 o 404 si no existe."
-          }
-        }
-      ]
-    },
-    {
-      "name": "5. Job Issues / Admin",
-      "item": [
         {
           "name": "Report Job Issue (Customer)",
           "request": {
@@ -238,19 +508,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reason\": \"quality\",\n  \"detail\": \"AUDIT issue\"\n}"
+              "raw": "{\n  \"reason\": \"quality\",\n  \"detail\": \"{{auditPrefix}} issue\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/issues",
-            "description": "Customer (own job) or Admin. Esperado: 201."
-          }
-        },
-        {
-          "name": "Admin Dashboard",
-          "request": {
-            "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" } ],
-            "url": "{{baseUrl}}/api/v1/admin/dashboard",
-            "description": "AdminOnly. Esperado: 200."
+            "description": "Solo si job existe y no completado; si ya Complete, puede 400. Ejecutar antes de Complete o en otro job."
           }
         }
       ]

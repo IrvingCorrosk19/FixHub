@@ -1,0 +1,685 @@
+{
+  "info": {
+    "name": "FixHub Functional E2E (FUNC_)",
+    "description": "Batería funcional E2E. Prefijo datos: FUNC_<timestamp>. Ver docs/QA/01_TEST_MATRIX.md y 02_HOW_TO_RUN.md",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5100" },
+    { "key": "funcPrefix", "value": "FUNC_" },
+    { "key": "funcTimestamp", "value": "" },
+    { "key": "customerToken", "value": "" },
+    { "key": "customerEmail", "value": "" },
+    { "key": "technicianToken", "value": "" },
+    { "key": "technicianEmail", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "jobId", "value": "" },
+    { "key": "proposalId", "value": "" },
+    { "key": "customer2Token", "value": "" },
+    { "key": "customer2Email", "value": "" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "var ts = pm.variables.replaceIn('{{$timestamp}}');",
+          "if (!pm.collectionVariables.get('funcTimestamp')) pm.collectionVariables.set('funcTimestamp', ts);"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01_AUTH",
+      "item": [
+        {
+          "name": "Health (TC-051)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/health",
+            "description": "GET /health sin auth. Esperado: 200, status healthy."
+          }
+        },
+        {
+          "name": "Register Customer (TC-001)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  var j = pm.response.json();",
+                "  if (j.token) pm.collectionVariables.set('customerToken', j.token);",
+                "  if (j.email) pm.collectionVariables.set('customerEmail', j.email);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{funcPrefix}}{{funcTimestamp}} Customer\",\n  \"email\": \"{{funcPrefix}}{{funcTimestamp}}_cust@test.local\",\n  \"password\": \"Password1!\",\n  \"role\": 1,\n  \"phone\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register",
+            "description": "TC-001. Role 1 = Customer. Esperado: 201, token."
+          }
+        },
+        {
+          "name": "Login Customer (TC-002)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) {",
+                "  var j = pm.response.json();",
+                "  if (j.token) pm.collectionVariables.set('customerToken', j.token);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"Password1!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "TC-002. Esperado: 200, token."
+          }
+        },
+        {
+          "name": "Register Technician (TC-019)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  var j = pm.response.json();",
+                "  if (j.token) pm.collectionVariables.set('technicianToken', j.token);",
+                "  if (j.email) pm.collectionVariables.set('technicianEmail', j.email);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{funcPrefix}}{{funcTimestamp}} Technician\",\n  \"email\": \"{{funcPrefix}}{{funcTimestamp}}_tech@test.local\",\n  \"password\": \"Password1!\",\n  \"role\": 2,\n  \"phone\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register",
+            "description": "TC-019. Role 2 = Technician. Esperado: 201."
+          }
+        },
+        {
+          "name": "Register Customer 2 (for TC-008)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  var j = pm.response.json();",
+                "  if (j.email) pm.collectionVariables.set('customer2Email', j.email);",
+                "  if (j.token) pm.collectionVariables.set('customer2Token', j.token);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{funcPrefix}}{{funcTimestamp}} Customer2\",\n  \"email\": \"{{funcPrefix}}{{funcTimestamp}}_c2@test.local\",\n  \"password\": \"Password1!\",\n  \"role\": 1,\n  \"phone\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register",
+            "description": "Para TC-008: Customer2 intenta ver job de Customer."
+          }
+        },
+        {
+          "name": "Login Customer 2",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) { var j = pm.response.json(); if (j.token) pm.collectionVariables.set('customer2Token', j.token); }"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customer2Email}}\",\n  \"password\": \"Password1!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Set customer2Token para 06_NEGATIVE."
+          }
+        },
+        {
+          "name": "Register Admin - BUG H03 (TC-030)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) { var j = pm.response.json(); if (j.token) pm.collectionVariables.set('adminToken', j.token); }",
+                "// Bug: esperado 400/403; actualmente 201. Documentar en reporte."
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{funcPrefix}}{{funcTimestamp}} Admin\",\n  \"email\": \"{{funcPrefix}}{{funcTimestamp}}_admin@test.local\",\n  \"password\": \"Password1!\",\n  \"role\": 3,\n  \"phone\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register",
+            "description": "TC-030. Bug H03: Register acepta Role=3 (Admin). Esperado: 400/403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02_CUSTOMER",
+      "item": [
+        {
+          "name": "Create Job (TC-003)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  var j = pm.response.json();",
+                "  if (j.id) pm.collectionVariables.set('jobId', j.id);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": 1,\n  \"title\": \"{{funcPrefix}}{{funcTimestamp}} Reparación\",\n  \"description\": \"Descripción FUNC_ E2E\",\n  \"addressText\": \"Calle Test 123\",\n  \"lat\": null,\n  \"lng\": null,\n  \"budgetMin\": 100,\n  \"budgetMax\": 200\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/jobs",
+            "description": "TC-003. Esperado: 201, status Open o Assigned."
+          }
+        },
+        {
+          "name": "Create Job - invalid category (TC-005)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": 99999,\n  \"title\": \"Invalid\",\n  \"description\": \"x\",\n  \"addressText\": \"x\",\n  \"lat\": null,\n  \"lng\": null,\n  \"budgetMin\": null,\n  \"budgetMax\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/jobs",
+            "description": "TC-005. Esperado: 400 CATEGORY_NOT_FOUND."
+          }
+        },
+        {
+          "name": "List My Jobs (TC-006)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/mine?page=1&pageSize=20",
+            "description": "TC-006. Esperado: 200, PagedResult con items."
+          }
+        },
+        {
+          "name": "Get Job by ID (TC-007)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}",
+            "description": "TC-007. Esperado: 200, JobDto."
+          }
+        },
+        {
+          "name": "Get Job Proposals - Customer (TC-009)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/proposals",
+            "description": "TC-009. Bug H04: puede devolver lista vacía. Esperado: 200 con propuestas si las hay."
+          }
+        },
+        {
+          "name": "Cancel Job (TC-010)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/cancel",
+            "description": "TC-010. Solo si job en Open. Esperado: 200, status Cancelled."
+          }
+        },
+        {
+          "name": "Complete Job (TC-012)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/complete",
+            "description": "TC-012. Job debe estar InProgress o Assigned. Esperado: 200, Completed."
+          }
+        },
+        {
+          "name": "Create Review (TC-014)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": \"{{jobId}}\",\n  \"stars\": 5,\n  \"comment\": \"{{funcPrefix}} Excelente servicio\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/reviews",
+            "description": "TC-014. Job debe estar Completed. Esperado: 201."
+          }
+        },
+        {
+          "name": "Report Issue (TC-016)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"late\",\n  \"detail\": \"{{funcPrefix}} Detalle incidencia\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/issues",
+            "description": "TC-016. Reason: no_contact|late|bad_service|other. Esperado: 201."
+          }
+        },
+        {
+          "name": "List Notifications (TC-017)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": "{{baseUrl}}/api/v1/notifications?page=1&pageSize=20",
+            "description": "TC-017. Esperado: 200."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03_ADMIN",
+      "item": [
+        {
+          "name": "Login Admin (set adminEmail/adminPassword in env)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) { var j = pm.response.json(); if (j.token) pm.collectionVariables.set('adminToken', j.token); }"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Usar credenciales de seed/admin. Setear adminEmail y adminPassword en environment."
+          }
+        },
+        {
+          "name": "Admin Dashboard (TC-031)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/dashboard",
+            "description": "TC-031. Esperado: 200, OpsDashboardDto."
+          }
+        },
+        {
+          "name": "Admin List Jobs (TC-032)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs?page=1&pageSize=20",
+            "description": "TC-032. Esperado: 200."
+          }
+        },
+        {
+          "name": "Admin Get Proposals (TC-033)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/proposals",
+            "description": "TC-033. Esperado: 200, lista completa."
+          }
+        },
+        {
+          "name": "Admin Accept Proposal (TC-034)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/proposals/{{proposalId}}/accept",
+            "description": "TC-034. Job Open, proposal Pending. Esperado: 200, job Assigned."
+          }
+        },
+        {
+          "name": "Admin Start Job (TC-035)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/jobs/{{jobId}}/start",
+            "description": "TC-035. Open/Assigned → InProgress. Esperado: 200."
+          }
+        },
+        {
+          "name": "Admin Update Job Status Completed (TC-036)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"newStatus\": \"Completed\"\n}" },
+            "url": "{{baseUrl}}/api/v1/admin/jobs/{{jobId}}/status",
+            "description": "TC-036. Job InProgress. Esperado: 200."
+          }
+        },
+        {
+          "name": "Admin List Applicants (TC-037)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/applicants?page=1&pageSize=20",
+            "description": "TC-037. Esperado: 200."
+          }
+        },
+        {
+          "name": "Admin List Issues (TC-039)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/issues?page=1&pageSize=20",
+            "description": "TC-039. Esperado: 200."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04_TECHNICIAN",
+      "item": [
+        {
+          "name": "Login Technician",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) { var j = pm.response.json(); if (j.token) pm.collectionVariables.set('technicianToken', j.token); }"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{technicianEmail}}\",\n  \"password\": \"Password1!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Usar email del Register Technician."
+          }
+        },
+        {
+          "name": "List Jobs - Technician (TC-020)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{technicianToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs?page=1&pageSize=20",
+            "description": "TC-020. Esperado: 200, Open + con propuesta."
+          }
+        },
+        {
+          "name": "Submit Proposal (TC-022)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) { var j = pm.response.json(); if (j.id) pm.collectionVariables.set('proposalId', j.id); }"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{technicianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 150,\n  \"message\": \"{{funcPrefix}} Propuesta técnica\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/proposals",
+            "description": "TC-022. Job Open. Esperado: 201."
+          }
+        },
+        {
+          "name": "My Assignments (TC-024)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{technicianToken}}" }],
+            "url": "{{baseUrl}}/api/v1/technicians/me/assignments?page=1&pageSize=20",
+            "description": "TC-024. Esperado: 200."
+          }
+        },
+        {
+          "name": "Start Job (TC-025)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{technicianToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/start",
+            "description": "TC-025. Solo si asignado. Esperado: 200, InProgress."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05_END2END",
+      "item": [
+        {
+          "name": "E2E Flow - Create Job",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) { var j = pm.response.json(); if (j.id) pm.collectionVariables.set('jobId', j.id); }"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": 1,\n  \"title\": \"{{funcPrefix}}{{funcTimestamp}} E2E Job\",\n  \"description\": \"E2E\",\n  \"addressText\": \"Addr 1\",\n  \"lat\": null,\n  \"lng\": null,\n  \"budgetMin\": 50,\n  \"budgetMax\": 100\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/jobs",
+            "description": "TC-043 paso 1."
+          }
+        },
+        {
+          "name": "E2E - Technician Proposal",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) { var j = pm.response.json(); if (j.id) pm.collectionVariables.set('proposalId', j.id); }"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{technicianToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"price\": 75,\n  \"message\": \"E2E proposal\"\n}" },
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/proposals",
+            "description": "TC-043 paso 2a."
+          }
+        },
+        {
+          "name": "E2E - Admin Accept",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/proposals/{{proposalId}}/accept",
+            "description": "TC-043 paso 2b."
+          }
+        },
+        {
+          "name": "E2E - Technician Start",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{technicianToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/start",
+            "description": "TC-043 paso 3."
+          }
+        },
+        {
+          "name": "E2E - Customer Complete",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/complete",
+            "description": "TC-043 paso 4."
+          }
+        },
+        {
+          "name": "E2E - Customer Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": \"{{jobId}}\",\n  \"stars\": 5,\n  \"comment\": \"E2E review\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/reviews",
+            "description": "TC-043 paso 5."
+          }
+        }
+      ]
+    },
+    {
+      "name": "06_NEGATIVE",
+      "item": [
+        {
+          "name": "Customer - Get Job other owner (TC-008)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer2Token}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}",
+            "description": "TC-008. Customer2 intenta ver job de Customer. Esperado: 403."
+          }
+        },
+        {
+          "name": "Customer - Complete job Open (TC-013)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/complete",
+            "description": "TC-013. Job en Open. Esperado: 400 INVALID_STATUS."
+          }
+        },
+        {
+          "name": "Technician - Duplicate Proposal (TC-023)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{technicianToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"price\": 160,\n  \"message\": \"dup\"\n}" },
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/proposals",
+            "description": "TC-023. Ya envió propuesta. Esperado: 400/409 DUPLICATE_PROPOSAL."
+          }
+        },
+        {
+          "name": "Technician - Start not assigned (TC-026)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{technicianToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/{{jobId}}/start",
+            "description": "TC-026. Job asignado a otro técnico. Esperado: 403."
+          }
+        },
+        {
+          "name": "Customer - GET /jobs (must use /mine) (TC-029)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{technicianToken}}" }],
+            "url": "{{baseUrl}}/api/v1/jobs/mine?page=1",
+            "description": "Technician GET /mine. Esperado: 403 (CustomerOnly)."
+          }
+        },
+        {
+          "name": "Customer - Admin Dashboard 403 (TC-042)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/dashboard",
+            "description": "TC-042. Esperado: 403."
+          }
+        },
+        {
+          "name": "Invalid JSON (TC-047)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ invalid" },
+            "url": "{{baseUrl}}/api/v1/jobs",
+            "description": "TC-047. Esperado: 400."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+Status|TestCase|Expected|Obtained|Detail
+PASS|TC-01: Health endpoint responde 200|HTTP 200|HTTP 200| 
+PASS|TC-02: Health status=healthy|healthy|healthy| 
+PASS|TC-03: Database=connected|connected|connected| 
+PASS|TC-04: Register Customer → 201|HTTP 201|HTTP 201| 
+PASS|TC-05: Token recibido en registro|non-empty|eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMDVmZDM5Zi0| 
+PASS|TC-06: UserId recibido en registro|non-empty|b05fd39f-6c57-4b77-ae12-a9c8e8889044| 
+PASS|TC-07: Role devuelto = Customer|Customer|Customer| 
+PASS|TC-08: Login Customer → 200|HTTP 200|HTTP 200| 
+PASS|TC-09: Token recibido en login|non-empty|eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMDVmZDM5Zi0| 
+FAIL|TC-10: Crear Job → 201|HTTP 201|HTTP 500|{"title":"An unexpected error occurred.","status":500,"instance":"/api/v1/jobs"} 
+FAIL|TC-11: Job ID recibido|non-empty|empty/null|{"title":"An unexpected error occurred.","status":500,"instance":"/api/v1/jobs"} 
+FAIL|TC-12: Job status inicial = Open|Open|500|{"title":"An unexpected error occurred.","status":500,"instance":"/api/v1/jobs"} 
+FAIL|TC-13: Job title correcto|TEST_JOB_1771883983|An unexpected error occurred.|{"title":"An unexpected error occurred.","status":500,"instance":"/api/v1/jobs"} 
+FAIL|TC-14: Job customerId presente|non-empty|empty/null|{"title":"An unexpected error occurred.","status":500,"instance":"/api/v1/jobs"} 
+PASS|TC-15: GET /jobs/mine → 200|HTTP 200|HTTP 200| 
+PASS|TC-16: /mine devuelve totalCount|non-empty|0| 
+PASS|TC-17: JobId aparece en /mine|contains ''|found| 
+FAIL|TC-18: GET job por ID → 200|HTTP 200|HTTP 403|{"title":"Customers must use GET /api/v1/jobs/mine to list their requests.","status":403,"instance":"/api/v1/jobs/","errorCode":"FORBIDDEN"} 
+PASS|TC-19: Job ID correcto||| 
+FAIL|TC-20: Campo createdAt presente|non-empty|empty/null|{"title":"Customers must use GET /api/v1/jobs/mine to list their requests.","status":403,"instance":"/api/v1/jobs/","errorCode":"FORBIDDEN"} 
+FAIL|TC-21: Campo categoryName presente|non-empty|empty/null|{"title":"Customers must use GET /api/v1/jobs/mine to list their requests.","status":403,"instance":"/api/v1/jobs/","errorCode":"FORBIDDEN"} 
+FAIL|TC-22: Campo customerName presente|non-empty|empty/null|{"title":"Customers must use GET /api/v1/jobs/mine to list their requests.","status":403,"instance":"/api/v1/jobs/","errorCode":"FORBIDDEN"} 
+PASS|TC-23: Register Customer2 → 201|HTTP 201|HTTP 201| 
+PASS|TC-24: Customer2 token obtenido|non-empty|eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZjAyYjlkNy1| 
+PASS|TC-25: Customer2 no puede ver job ajeno → 403|HTTP 403|HTTP 403| 
+PASS|TC-26: Customer GET /jobs → 403|HTTP 403|HTTP 403| 
+PASS|TC-27: Sin auth → 401|HTTP 401|HTTP 401| 
+FAIL|TC-28: Register Technician → 201|HTTP 201|HTTP 500|{"title":"An unexpected error occurred.","status":500,"instance":"/api/v1/auth/register"} 
+FAIL|TC-29: Tech token obtenido|non-empty|empty/null|{"title":"An unexpected error occurred.","status":500,"instance":"/api/v1/auth/register"} 
+FAIL|TC-30: Tech userId obtenido|non-empty|empty/null|{"title":"An unexpected error occurred.","status":500,"instance":"/api/v1/auth/register"} 
+FAIL|TC-31: Tech role = Technician|Technician||{"title":"An unexpected error occurred.","status":500,"instance":"/api/v1/auth/register"} 
+FAIL|TC-32: Login Technician → 200|HTTP 200|HTTP 401|{"title":"Invalid credentials.","status":401,"errorCode":"INVALID_CREDENTIALS"} 
+FAIL|TC-33: Tech token actualizado|non-empty|empty/null|{"title":"Invalid credentials.","status":401,"errorCode":"INVALID_CREDENTIALS"} 
+FAIL|TC-34: Technician GET /jobs → 200|HTTP 200|HTTP 401| 
+FAIL|TC-35: /jobs devuelve items|non-empty|empty/null| 
+PASS|TC-36: Job aparece en lista de technician|contains ''|found| 
+FAIL|TC-37: Technician no puede crear jobs → 403|HTTP 403|HTTP 401| 
+FAIL|TC-38: Submit Proposal → 201|HTTP 201|HTTP 404| 
+FAIL|TC-39: Proposal ID recibido|non-empty|empty/null| 
+FAIL|TC-40: Proposal status = Pending|Pending|| 
+PASS|TC-41: Proposal technicianId correcto||| 
+FAIL|TC-42: Proposal price correcto|150.0|| 
+FAIL|TC-43: Proposal duplicada → 409|HTTP 409|HTTP 404| 
+FAIL|TC-44: Error code DUPLICATE_PROPOSAL|contains 'DUPLICATE_PROPOSAL'|not found| 
+FAIL|TC-45: Proposal en job inexistente → 404|HTTP 404|HTTP 401| 
+FAIL|TC-46: Error code JOB_NOT_FOUND|contains 'JOB_NOT_FOUND'|not found| 
+FAIL|TC-47: Customer no puede enviar proposals → 403|HTTP 403|HTTP 404| 
+FAIL|TC-48: Customer lista proposals de su job → 200|HTTP 200|HTTP 404| 
+PASS|TC-49: ProposalId aparece en lista|contains ''|found| 
+FAIL|TC-50: Customer2 no puede ver proposals ajenas → 403|HTTP 403|HTTP 404| 
+FAIL|TC-51: Customer no puede aceptar propuesta → 403|HTTP 403|HTTP 404| 
+FAIL|TC-52: Error FORBIDDEN en aceptar|contains 'FORBIDDEN'|not found| 
+FAIL|TC-53: Technician no puede aceptar propuesta → 403|HTTP 403|HTTP 404| 
+FAIL|TC-54: Login Admin → 200|HTTP 200|HTTP 401|{"title":"Invalid credentials.","status":401,"errorCode":"INVALID_CREDENTIALS"} 
+FAIL|TC-55: Admin token obtenido|non-empty|empty/null|{"title":"Invalid credentials.","status":401,"errorCode":"INVALID_CREDENTIALS"} 
+FAIL|TC-56: Admin role = Admin|Admin||{"title":"Invalid credentials.","status":401,"errorCode":"INVALID_CREDENTIALS"} 
+FAIL|TC-57: Admin acepta propuesta → 200|HTTP 200|HTTP 404| 
+FAIL|TC-58: AssignmentId recibido|non-empty|empty/null| 
+PASS|TC-59: TechnicianId en assignment correcto||| 
+FAIL|TC-60: GET job después de assign → 200|HTTP 200|HTTP 401| 
+FAIL|TC-61: Job status = Assigned|Assigned|| 
+FAIL|TC-62: Job assignedAt presente|non-empty|empty/null| 
+PASS|TC-63: AssignedTechnicianId correcto||| 
+FAIL|TC-64: Propuesta ya aceptada → 409|HTTP 409|HTTP 404| 
+FAIL|TC-65: Technician inicia job → 200|HTTP 200|HTTP 404| 
+FAIL|TC-66: Job status = InProgress|InProgress|| 
+FAIL|TC-67: StartedAt no es null|non-empty|empty/null| 
+FAIL|TC-68: Re-iniciar job ya InProgress → 400|HTTP 400|HTTP 404| 
+FAIL|TC-69: Error INVALID_STATUS en re-start|contains 'INVALID_STATUS'|not found| 
+FAIL|TC-70: Customer completa job → 200|HTTP 200|HTTP 404| 
+FAIL|TC-71: Job status = Completed|Completed|| 
+FAIL|TC-72: CompletedAt presente|non-empty|empty/null| 
+FAIL|TC-73: Re-completar job → 400|HTTP 400|HTTP 404| 
+FAIL|TC-74: Error INVALID_STATUS en re-complete|contains 'INVALID_STATUS'|not found| 
+FAIL|TC-75: Technician no puede cancelar → 403|HTTP 403|HTTP 404| 
+FAIL|TC-76: Admin GET /jobs → 200|HTTP 200|HTTP 401| 
+FAIL|TC-77: /jobs devuelve items|non-empty|empty/null| 
+PASS|TC-78: Job del test aparece en lista admin|contains ''|found| 
+FAIL|TC-79: Admin GET proposals → 200|HTTP 200|HTTP 404| 
+PASS|TC-80: Proposal del test aparece|contains ''|found| 
+FAIL|TC-81: Admin dashboard → 200|HTTP 200|HTTP 401| 
+FAIL|TC-82: Dashboard tiene kpis|non-empty|empty/null| 
+FAIL|TC-83: Admin metrics → 200|HTTP 200|HTTP 401| 
+FAIL|TC-84: Admin applicants → 200|HTTP 200|HTTP 401| 
+PASS|TC-85: Technician del test en applicants|contains ''|found| 
+PASS|TC-86: Customer bloqueado de admin → 403|HTTP 403|HTTP 403| 
+FAIL|TC-87: Technician bloqueado de admin → 403|HTTP 403|HTTP 401| 
+PASS|TC-88: Customer2 bloqueado de admin → 403|HTTP 403|HTTP 403| 
+FAIL|TC-89: Admin issues → 200|HTTP 200|HTTP 401| 
+FAIL|TC-90: Admin filtra jobs Completed → 200|HTTP 200|HTTP 401| 
+PASS|TC-90b: Job completado aparece en filtro|contains ''|found| 
+FAIL|TC-91: GET job final → 200|HTTP 200|HTTP 401| 
+FAIL|TC-92: Estado final = Completed|Completed|| 
+FAIL|TC-93: completedAt presente|non-empty|empty/null| 
+FAIL|TC-94: assignedTechnicianId presente|non-empty|empty/null| 
+FAIL|TC-95: startedAt presente|non-empty|empty/null| 
+PASS|TC-96: Password incorrecta → 401|HTTP 401|HTTP 401| 
+PASS|TC-97: Error INVALID_CREDENTIALS|contains 'INVALID_CREDENTIALS'|found| 
+PASS|TC-98: Email duplicado → 409|HTTP 409|HTTP 409| 
+PASS|TC-99: Error EMAIL_TAKEN|contains 'EMAIL_TAKEN'|found| 
+FAIL|TC-100: Job inexistente → 404|HTTP 404|HTTP 401| 
+PASS|TC-103: Rate limiting|Skip (manual)|Skip (verificado por código)| 
