@@ -1,6 +1,6 @@
 # FixHub - API + Web + PostgreSQL
-# Para VPS: prefijo fixhub_, puerto 8084, red/volúmenes aislados
-# NO afecta: CarnetQR (8001), PanamaTravelHub (8082), n8n (8083)
+# Para VPS: prefijo fixhub_, puerto 8081 (subdominio fixhub.autonomousflow.lat)
+# NO afecta: CarnetQR (80), PanamaTravelHub (8082), n8n (8083)
 #
 services:
   fixhub_postgres:
@@ -81,7 +81,7 @@ services:
     volumes:
       - fixhub_dataprotection_keys:/app/dataprotection-keys
     ports:
-      - "8084:8080"
+      - "8081:8080"
     networks:
       - fixhub_net
 

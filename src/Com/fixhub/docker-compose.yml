@@ -1,6 +1,6 @@
 # FixHub - Multi-servicio: API + Web + PostgreSQL
-# Aislado: prefijo fixhub_, puerto 8084, red/volúmenes propios
-# NO afecta: CarnetQR (8001/8081), PanamaTravelHub (8082), n8n (8083)
+# Aislado: prefijo fixhub_, puerto 8081 (fixhub.autonomousflow.lat)
+# NO afecta: CarnetQR (80), PanamaTravelHub (8082), n8n (8083)
 #
 services:
   fixhub_postgres:
@@ -43,8 +43,8 @@ services:
       JwtSettings__SecretKey: ${JWT_SECRET_KEY}
       JwtSettings__Issuer: FixHub.API
       JwtSettings__Audience: FixHub.Clients
-      WebOrigin: ${WEB_ORIGIN:-http://164.68.99.83:8084}
-      BaseWebUrl: ${WEB_ORIGIN:-http://164.68.99.83:8084}
+      WebOrigin: ${WEB_ORIGIN:-https://fixhub.autonomousflow.lat}
+      BaseWebUrl: ${WEB_ORIGIN:-https://fixhub.autonomousflow.lat}
     # API interna; solo accesible desde fixhub_web
     networks:
       - fixhub_net
@@ -68,7 +68,7 @@ services:
     volumes:
       - fixhub_dataprotection_keys:/app/dataprotection-keys
     ports:
-      - "8084:8080"
+      - "8081:8080"
     networks:
       - fixhub_net
 

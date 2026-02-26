@@ -24,6 +24,8 @@ public interface IApplicationDbContext
     DbSet<Notification> Notifications { get; }
     DbSet<NotificationOutbox> NotificationOutbox { get; }
     DbSet<JobAlert> JobAlerts { get; }
+    DbSet<UserStatusHistory> UserStatusHistories { get; }
+    DbSet<AssignmentOverride> AssignmentOverrides { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

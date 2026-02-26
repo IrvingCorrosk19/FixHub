@@ -23,6 +23,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutbox> NotificationOutbox => Set<NotificationOutbox>();
     public DbSet<JobAlert> JobAlerts => Set<JobAlert>();
+    public DbSet<UserStatusHistory> UserStatusHistories => Set<UserStatusHistory>();
+    public DbSet<AssignmentOverride> AssignmentOverrides => Set<AssignmentOverride>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
         => Database.BeginTransactionAsync(cancellationToken);

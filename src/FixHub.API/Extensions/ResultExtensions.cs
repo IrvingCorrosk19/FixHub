@@ -49,6 +49,11 @@ public static class ResultExtensions
             "INVALID_CREDENTIALS"
                 => controller.Unauthorized(ProblemFrom(result, 401)),
 
+            "INVALID_STATUS"
+            or "NOT_TECHNICIAN"
+            or "SAME_TECHNICIAN"
+                => controller.BadRequest(ProblemFrom(result, 400)),
+
             _ => controller.BadRequest(ProblemFrom(result, 400))
         };
     }

@@ -125,8 +125,87 @@ public class AdminController(ISender mediator) : ApiControllerBase
         var result = await mediator.Send(new ResolveJobIssueCommand(id, CurrentUserId, request.ResolutionNote), ct);
         return result.ToActionResult(this, successStatusCode: 204);
     }
+
+    // ─── User status (Admin only) ─────────────────────────────────────────────
+    /// <summary>Suspend a user (temporary). [Admin only]</summary>
+    [HttpPost("users/{id:guid}/suspend")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SuspendUser(
+        Guid id,
+        [FromBody] SuspendUserRequest? request,
+        CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new SuspendUserCommand(
+            id,
+            CurrentUserId,
+            request?.SuspendedUntil,
+            request?.SuspensionReason), ct);
+        return result.ToActionResult(this, successStatusCode: 204);
+    }
+
+    /// <summary>Unsuspend a user. [Admin only]</summary>
+    [HttpPost("users/{id:guid}/unsuspend")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UnsuspendUser(Guid id, CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new UnsuspendUserCommand(id, CurrentUserId), ct);
+        return result.ToActionResult(this, successStatusCode: 204);
+    }
+
+    /// <summary>Activate a user. [Admin only]</summary>
+    [HttpPost("users/{id:guid}/activate")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ActivateUser(Guid id, CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new ActivateUserCommand(id, CurrentUserId), ct);
+        return result.ToActionResult(this, successStatusCode: 204);
+    }
+
+    /// <summary>Deactivate a user (sets DeactivatedAt). [Admin only]</summary>
+    [HttpPost("users/{id:guid}/deactivate")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeactivateUser(Guid id, CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new DeactivateUserCommand(id, CurrentUserId), ct);
+        return result.ToActionResult(this, successStatusCode: 204);
+    }
+
+    /// <summary>Reassign job to another technician. [OpsOnly: Admin, Supervisor, OpsDispatcher]</summary>
+    [Authorize(Policy = "OpsOnly")]
+    [HttpPost("jobs/{id:guid}/reassign")]
+    [ProducesResponseType(typeof(ReassignJobResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ReassignJob(
+        Guid id,
+        [FromBody] ReassignJobRequest request,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Reason))
+            return BadRequest(new ProblemDetails { Title = "Reason is required." });
+        var result = await mediator.Send(new ReassignJobCommand(
+            id,
+            CurrentUserId,
+            request.ToTechnicianId,
+            request.Reason.Trim(),
+            request.ReasonDetail), ct);
+        return result.ToActionResult(this);
+    }
 }
 
 public record UpdateStatusRequest(int Status);
 public record AdminJobStatusRequest(string NewStatus);
 public record ResolveIssueRequest(string ResolutionNote);
+
+public record SuspendUserRequest(DateTime? SuspendedUntil, string? SuspensionReason);
+
+public record ReassignJobRequest(Guid ToTechnicianId, string Reason, string? ReasonDetail);

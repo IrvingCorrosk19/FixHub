@@ -1,5 +1,5 @@
 # Despliega FixHub en el VPS - NO afecta otras aplicaciones
-# Puertos: FixHub=8084 | CarnetQR=8001 | PanamaTravelHub=8082 | n8n=8083
+# Puertos: FixHub=8081 | CarnetQR=80 | PanamaTravelHub=8082 | n8n=8083
 
 $plink = "C:\Program Files\PuTTY\plink.exe"
 $hostname = "root@164.68.99.83"
@@ -19,7 +19,7 @@ $cmdCheck = "docker ps --format 'table {{.Names}}\t{{.Ports}}'"
 $resultCheck = & $plink -ssh -pw $password -batch -hostkey $hostkey $hostname $cmdCheck 2>&1
 Write-Host $resultCheck
 Write-Host ""
-Write-Host "FixHub usara: puerto 8084, contenedores fixhub_*, red fixhub_net" -ForegroundColor Cyan
+Write-Host "FixHub usara: puerto 8081 (fixhub.autonomousflow.lat), contenedores fixhub_*, red fixhub_net" -ForegroundColor Cyan
 Write-Host ""
 
 # PASO 1: Directorio y repo (fuerza actualizacion, descarta cambios locales)
@@ -38,7 +38,7 @@ POSTGRES_PASSWORD=FixHub2024!Secure
 
 JWT_SECRET_KEY=ChangeMeProductionMin32CharsSecretKey!!
 
-WEB_ORIGIN=http://164.68.99.83:8084
+WEB_ORIGIN=https://fixhub.autonomousflow.lat
 
 ASPNETCORE_ENVIRONMENT=Production
 "@
@@ -69,8 +69,8 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host "  DESPLIEGUE COMPLETADO" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "FixHub:        http://164.68.99.83:8084" -ForegroundColor Green
-Write-Host "CarnetQR:      http://164.68.99.83 (puerto 80)" -ForegroundColor Gray
+Write-Host "FixHub:        https://fixhub.autonomousflow.lat  (o http://164.68.99.83:8081)" -ForegroundColor Green
+Write-Host "CarnetQR:      https://carnet.autonomousflow.lat (puerto 80)" -ForegroundColor Gray
 Write-Host "PanamaTravelHub: http://164.68.99.83:8082" -ForegroundColor Gray
 Write-Host "n8n:           http://164.68.99.83:8083" -ForegroundColor Gray
 Write-Host ""

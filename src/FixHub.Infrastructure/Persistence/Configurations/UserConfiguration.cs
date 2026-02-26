@@ -46,6 +46,25 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasColumnName("is_active")
             .HasDefaultValue(true);
 
+        builder.Property(u => u.IsSuspended)
+            .HasColumnName("is_suspended")
+            .HasDefaultValue(false);
+
+        builder.Property(u => u.SuspendedUntil)
+            .HasColumnName("suspended_until");
+
+        builder.Property(u => u.SuspensionReason)
+            .HasColumnName("suspension_reason")
+            .HasMaxLength(500);
+
+        builder.Property(u => u.DeactivatedAt)
+            .HasColumnName("deactivated_at");
+
+        builder.Property(u => u.RowVersion)
+            .HasColumnName("row_version")
+            .HasColumnType("bytea")
+            .IsConcurrencyToken();
+
         // Relations
         builder.HasOne(u => u.TechnicianProfile)
             .WithOne(tp => tp.User)

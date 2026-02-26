@@ -143,6 +143,10 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser()
               .RequireRole("Admin"));
 
+    options.AddPolicy("OpsOnly", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireRole("Admin", "Supervisor", "OpsDispatcher"));
+
     // Admin puede hacer todo lo que Customer hace
     options.AddPolicy("CustomerOrAdmin", policy =>
         policy.RequireAuthenticatedUser()
