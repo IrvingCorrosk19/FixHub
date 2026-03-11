@@ -6,6 +6,7 @@ $hostname = "root@164.68.99.83"
 $password = "DC26Y0U5ER6sWj"
 $hostkey = "ssh-ed25519 SHA256:fXnxiWr5sqazM3xRId7HtcseAZ0XHcJ2BBIuPsLt2J0"
 $remoteDir = "/opt/apps/fixhub"
+$gitBranch = "audit/fixhub-100"   # rama a desplegar (cambiar a main cuando se haga merge)
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  DESPLIEGUE FIXHUB - VPS" -ForegroundColor Cyan
@@ -24,7 +25,7 @@ Write-Host ""
 
 # PASO 1: Directorio y repo (fuerza actualizacion, descarta cambios locales)
 Write-Host "PASO 1: Clonando/actualizando FixHub en $remoteDir..." -ForegroundColor Yellow
-$cmd1 = "mkdir -p $remoteDir && cd $remoteDir && if [ -d .git ]; then git fetch origin; git reset --hard origin/main 2>/dev/null || git reset --hard origin/master; else git clone https://github.com/IrvingCorrosk19/FixHub.git .; fi && ls -la docker-compose.yml 2>/dev/null || echo 'FALTA: docker-compose.yml'"
+$cmd1 = "mkdir -p $remoteDir && cd $remoteDir && if [ -d .git ]; then git fetch origin; git checkout $gitBranch 2>/dev/null; git reset --hard origin/$gitBranch; else git clone -b $gitBranch https://github.com/IrvingCorrosk19/FixHub.git .; fi && ls -la docker-compose.yml 2>/dev/null || echo 'FALTA: docker-compose.yml'"
 $result1 = & $plink -ssh -pw $password -batch -hostkey $hostkey $hostname $cmd1 2>&1
 Write-Host $result1
 Write-Host ""
