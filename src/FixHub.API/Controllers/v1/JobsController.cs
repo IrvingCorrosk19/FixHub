@@ -5,12 +5,13 @@ using FixHub.Application.Features.Proposals;
 using FixHub.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FixHub.API.Controllers.v1;
 
 [Authorize]
-public class JobsController(ISender mediator, ILogger<JobsController> logger) : ApiControllerBase
+public class JobsController(ISender mediator, ILogger<JobsController> logger, IWebHostEnvironment env) : ApiControllerBase
 {
     /// <summary>Create a new job. [Customer only]</summary>
     [HttpPost]
@@ -32,13 +33,14 @@ public class JobsController(ISender mediator, ILogger<JobsController> logger) : 
         var command = new CreateJobCommand(
             CurrentUserId,
             request.CategoryId,
-            request.Title,
-            request.Description,
-            request.AddressText,
+            request.Title ?? "",
+            request.Description ?? "",
+            request.AddressText ?? "",
             request.Lat,
             request.Lng,
             request.BudgetMin,
-            request.BudgetMax);
+            request.BudgetMax,
+            SkipAutoAssign: env.IsDevelopment());
 
         var result = await mediator.Send(command, ct);
         return result.ToActionResult(this, successStatusCode: 201);

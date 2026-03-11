@@ -83,13 +83,14 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1)
             }));
 
-    // Auth: 10 req/min por IP; se aplica con [EnableRateLimiting("AuthPolicy")] en AuthController.
+    // Auth: 10 req/min por IP en producción; en Development 60 para permitir tests E2E/stress.
+    var authLimit = builder.Environment.IsDevelopment() ? 60 : 10;
     options.AddPolicy("AuthPolicy", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = authLimit,
                 Window = TimeSpan.FromMinutes(1)
             }));
 });

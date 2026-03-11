@@ -19,7 +19,8 @@ public record CreateJobCommand(
     decimal? Lat,
     decimal? Lng,
     decimal? BudgetMin,
-    decimal? BudgetMax
+    decimal? BudgetMax,
+    bool SkipAutoAssign = false
 ) : IRequest<Result<JobDto>>;
 
 // ─── Response ─────────────────────────────────────────────────────────────────
@@ -88,11 +89,11 @@ public class CreateJobCommandHandler(
             return Result<JobDto>.Failure("Customer not found.", "USER_NOT_FOUND");
 
         // Buscar técnico ANTES de abrir la transacción (lectura de solo lectura)
-        // Solo auto-asignar si el perfil tiene User cargado (evita NullReferenceException si FK rota)
+        // Solo auto-asignar si el perfil tiene User cargado y no se pidió omitir (p. ej. en Development para tests).
         var techProfile = await db.TechnicianProfiles
             .Include(tp => tp.User)
             .FirstOrDefaultAsync(tp => tp.Status == TechnicianStatus.Approved, ct);
-        var canAutoAssign = techProfile?.User != null;
+        var canAutoAssign = !req.SkipAutoAssign && techProfile?.User != null;
 
         // FASE 14: Transacción explícita — un único SaveChanges, rollback en cualquier error
         await using var transaction = await db.BeginTransactionAsync(ct);

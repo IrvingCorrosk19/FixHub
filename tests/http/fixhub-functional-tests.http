@@ -1,0 +1,538 @@
+# FixHub Functional E2E — HTTP tests (VSCode REST Client)
+# Base URL: API v1. Run requests in order; copy tokens/ids from responses into variables below.
+
+@baseUrl = http://localhost:5100/api/v1
+@customer_token =
+@technician_token =
+@admin_token =
+@job_id =
+@proposal_id =
+@customer_id =
+@technician_id =
+@admin_id =
+@technician_b_id =
+
+###############################################################################
+# SETUP — Run once: register users and login to get tokens. Copy from responses:
+# - customer_token, customer_id from Login Customer
+# - technician_token, technician_id from Login Technician  
+# - admin_token, admin_id from Login Admin
+# Then approve technician: PATCH admin/technicians/{{technician_id}}/status with {"status": 2}
+###############################################################################
+
+### Register Customer (Setup)
+### Request: POST register with role Customer
+### Expected: 201
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Cliente E2E Test",
+  "email": "cliente-e2e@test.fixhub",
+  "password": "Test123!",
+  "role": 1,
+  "phone": "+34000000001"
+}
+
+###
+
+### Login Customer
+### Request: POST login to get JWT
+### Expected: 200 — copy "token" and "userId" from response to @customer_token and @customer_id
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "cliente-e2e@test.fixhub",
+  "password": "Test123!"
+}
+
+###
+
+### Register Technician (Setup)
+### Request: POST register with role Technician
+### Expected: 201
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Técnico E2E Test",
+  "email": "tecnico-e2e@test.fixhub",
+  "password": "Test123!",
+  "role": 2,
+  "phone": "+34000000002"
+}
+
+###
+
+### Login Technician
+### Request: POST login
+### Expected: 200 — copy "token" and "userId" to @technician_token and @technician_id
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "tecnico-e2e@test.fixhub",
+  "password": "Test123!"
+}
+
+###
+
+### Register Admin (Setup)
+### Request: POST register with role Admin
+### Expected: 201
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Admin E2E Test",
+  "email": "admin-e2e@test.fixhub",
+  "password": "Test123!",
+  "role": 3,
+  "phone": null
+}
+
+###
+
+### Login Admin
+### Request: POST login
+### Expected: 200 — copy "token" and "userId" to @admin_token and @admin_id
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin-e2e@test.fixhub",
+  "password": "Test123!"
+}
+
+###
+
+### Approve Technician (Setup) — required so Admin can accept proposals
+### Request: PATCH technician status to Approved (2)
+### Expected: 204
+PATCH {{baseUrl}}/admin/technicians/{{technician_id}}/status
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "status": 2
+}
+
+###
+
+###############################################################################
+### SCENARIO_1_NORMAL_FLOW
+### Flujo completo: Crear job → Propuesta → Admin acepta → Técnico inicia → Cliente completa
+###############################################################################
+
+### 1.1 Create Job (Customer)
+### Request: POST create job as customer
+### Expected: 201 — copy "id" from response to @job_id
+POST {{baseUrl}}/jobs
+Authorization: Bearer {{customer_token}}
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "Reparación E2E flujo normal",
+  "description": "Descripción del trabajo",
+  "addressText": "Calle Test 1",
+  "lat": null,
+  "lng": null,
+  "budgetMin": 50,
+  "budgetMax": 150
+}
+
+###
+
+### 1.2 Technician sends proposal
+### Request: POST submit proposal for job
+### Expected: 201 — copy "id" from response to @proposal_id
+POST {{baseUrl}}/jobs/{{job_id}}/proposals
+Authorization: Bearer {{technician_token}}
+Content-Type: application/json
+
+{
+  "price": 100,
+  "message": "Puedo ir mañana"
+}
+
+###
+
+### 1.3 Admin accepts proposal
+### Request: POST accept proposal (creates JobAssignment)
+### Expected: 200
+POST {{baseUrl}}/proposals/{{proposal_id}}/accept
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+###
+
+### 1.4 Technician starts job
+### Request: POST start job (Assigned → InProgress)
+### Expected: 200
+POST {{baseUrl}}/jobs/{{job_id}}/start
+Authorization: Bearer {{technician_token}}
+
+###
+
+### 1.5 Customer completes job
+### Request: POST complete job
+### Expected: 200
+POST {{baseUrl}}/jobs/{{job_id}}/complete
+Authorization: Bearer {{customer_token}}
+
+###
+
+### 1.6 Get job (verify final state)
+### Request: GET job by id
+### Expected: 200 — status should be "Completed"
+GET {{baseUrl}}/jobs/{{job_id}}
+Authorization: Bearer {{customer_token}}
+
+###
+
+###############################################################################
+### SCENARIO_2_CANCEL_BEFORE_ASSIGN
+### Cliente crea job y cancela antes de que se asigne técnico
+###############################################################################
+
+### 2.1 Create Job (Customer)
+### Request: POST create job
+### Expected: 201 — copy "id" to @job_id for next steps
+POST {{baseUrl}}/jobs
+Authorization: Bearer {{customer_token}}
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "Job a cancelar antes de asignación",
+  "description": "Descripción",
+  "addressText": "Calle Test 2",
+  "lat": null,
+  "lng": null,
+  "budgetMin": 30,
+  "budgetMax": 80
+}
+
+###
+
+### 2.2 Customer cancels job (before any proposal accepted)
+### Request: POST cancel job
+### Expected: 200 — status "Cancelled", cancelledAt present
+POST {{baseUrl}}/jobs/{{job_id}}/cancel
+Authorization: Bearer {{customer_token}}
+
+###
+
+### 2.3 Get job (verify cancelled)
+### Request: GET job
+### Expected: 200 — status "Cancelled"
+GET {{baseUrl}}/jobs/{{job_id}}
+Authorization: Bearer {{customer_token}}
+
+###
+
+###############################################################################
+### SCENARIO_3_CANCEL_AFTER_ASSIGN
+### Job asignado; cliente cancela después de que Admin acepta propuesta
+###############################################################################
+
+### 3.1 Create Job (Customer)
+### Request: POST create job
+### Expected: 201 — copy "id" to @job_id
+POST {{baseUrl}}/jobs
+Authorization: Bearer {{customer_token}}
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "Job a cancelar después de asignación",
+  "description": "Descripción",
+  "addressText": "Calle Test 3",
+  "lat": null,
+  "lng": null,
+  "budgetMin": 40,
+  "budgetMax": 90
+}
+
+###
+
+### 3.2 Technician sends proposal
+### Request: POST proposal
+### Expected: 201 — copy "id" to @proposal_id
+POST {{baseUrl}}/jobs/{{job_id}}/proposals
+Authorization: Bearer {{technician_token}}
+Content-Type: application/json
+
+{
+  "price": 60,
+  "message": "Propuesta para escenario 3"
+}
+
+###
+
+### 3.3 Admin accepts proposal
+### Request: POST accept proposal
+### Expected: 200
+POST {{baseUrl}}/proposals/{{proposal_id}}/accept
+Authorization: Bearer {{admin_token}}
+
+###
+
+### 3.4 Customer cancels job (after assignment)
+### Request: POST cancel job
+### Expected: 200 — status "Cancelled"
+POST {{baseUrl}}/jobs/{{job_id}}/cancel
+Authorization: Bearer {{customer_token}}
+
+###
+
+### 3.5 Get job (verify cancelled)
+### Request: GET job
+### Expected: 200 — status "Cancelled"
+GET {{baseUrl}}/jobs/{{job_id}}
+Authorization: Bearer {{customer_token}}
+
+###
+
+###############################################################################
+### SCENARIO_4_ADMIN_REASSIGN
+### Job asignado a Técnico A; Admin reasigna a Técnico B (need second technician)
+### Setup: Register a second technician, approve, set @technician_b_id. Use same job.
+###############################################################################
+
+### 4.1 Register second technician (Setup for scenario 4)
+### Request: POST register Technician B
+### Expected: 201
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Técnico B E2E",
+  "email": "tecnico-b-e2e@test.fixhub",
+  "password": "Test123!",
+  "role": 2,
+  "phone": "+34000000003"
+}
+
+###
+
+### 4.2 Login Technician B — copy "userId" to @technician_b_id
+### Request: POST login
+### Expected: 200
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "tecnico-b-e2e@test.fixhub",
+  "password": "Test123!"
+}
+
+###
+
+### 4.3 Approve Technician B
+### Request: PATCH status Approved
+### Expected: 204
+PATCH {{baseUrl}}/admin/technicians/{{technician_b_id}}/status
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "status": 2
+}
+
+###
+
+### 4.4 Create Job (Customer)
+### Request: POST create job
+### Expected: 201 — copy "id" to @job_id
+POST {{baseUrl}}/jobs
+Authorization: Bearer {{customer_token}}
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "Job para reasignación",
+  "description": "Descripción",
+  "addressText": "Calle Test 4",
+  "lat": null,
+  "lng": null,
+  "budgetMin": 50,
+  "budgetMax": 120
+}
+
+###
+
+### 4.5 Technician A sends proposal
+### Request: POST proposal
+### Expected: 201 — copy "id" to @proposal_id
+POST {{baseUrl}}/jobs/{{job_id}}/proposals
+Authorization: Bearer {{technician_token}}
+Content-Type: application/json
+
+{
+  "price": 80,
+  "message": "Técnico A"
+}
+
+###
+
+### 4.6 Admin accepts proposal (assigns to Technician A)
+### Request: POST accept proposal
+### Expected: 200
+POST {{baseUrl}}/proposals/{{proposal_id}}/accept
+Authorization: Bearer {{admin_token}}
+
+###
+
+### 4.7 Admin reassigns job to Technician B
+### Request: POST reassign to technician_b_id
+### Expected: 200 — jobId, newAssignmentId, toTechnicianId, overrideId
+POST {{baseUrl}}/admin/jobs/{{job_id}}/reassign
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "toTechnicianId": "{{technician_b_id}}",
+  "reason": "Reasignación E2E por disponibilidad",
+  "reasonDetail": "Detalle opcional"
+}
+
+###
+
+### 4.8 Get job (verify still Assigned, technician should be B)
+### Request: GET job
+### Expected: 200 — status "Assigned", assignedTechnicianId = technician_b_id
+GET {{baseUrl}}/jobs/{{job_id}}
+Authorization: Bearer {{admin_token}}
+
+###
+
+###############################################################################
+### SCENARIO_5_SUSPENDED_CUSTOMER
+### Admin suspende cliente; cliente intenta crear job (puede 201 o 403 según política)
+###############################################################################
+
+### 5.1 Admin suspends customer
+### Request: POST suspend user (customer_id)
+### Expected: 204
+POST {{baseUrl}}/admin/users/{{customer_id}}/suspend
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "suspendedUntil": null,
+  "suspensionReason": "Prueba E2E suspensión cliente"
+}
+
+###
+
+### 5.2 Customer tries to create job (may succeed 201 if no check, or 403 if blocked)
+### Request: POST create job as suspended customer
+### Expected: 201 (current behaviour) or 403 (if product blocks suspended users)
+POST {{baseUrl}}/jobs
+Authorization: Bearer {{customer_token}}
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "Job intento cliente suspendido",
+  "description": "Descripción",
+  "addressText": "Calle Test 5",
+  "lat": null,
+  "lng": null,
+  "budgetMin": 20,
+  "budgetMax": 50
+}
+
+###
+
+### 5.3 Admin unsuspends customer (cleanup for other scenarios)
+### Request: POST unsuspend user
+### Expected: 204
+POST {{baseUrl}}/admin/users/{{customer_id}}/unsuspend
+Authorization: Bearer {{admin_token}}
+
+###
+
+###############################################################################
+### SCENARIO_6_SUSPENDED_TECHNICIAN
+### Admin suspende técnico; técnico intenta enviar propuesta o iniciar job
+###############################################################################
+
+### 6.1 Create Job (Customer) — for technician to propose/start
+### Request: POST create job
+### Expected: 201 — copy "id" to @job_id
+POST {{baseUrl}}/jobs
+Authorization: Bearer {{customer_token}}
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "Job para técnico suspendido",
+  "description": "Descripción",
+  "addressText": "Calle Test 6",
+  "lat": null,
+  "lng": null,
+  "budgetMin": 35,
+  "budgetMax": 70
+}
+
+###
+
+### 6.2 Admin suspends technician
+### Request: POST suspend technician
+### Expected: 204
+POST {{baseUrl}}/admin/users/{{technician_id}}/suspend
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "suspendedUntil": null,
+  "suspensionReason": "Prueba E2E suspensión técnico"
+}
+
+###
+
+### 6.3 Suspended technician tries to send proposal (may 201 or 403)
+### Request: POST submit proposal
+### Expected: 201 (current) or 403 (if product blocks suspended)
+POST {{baseUrl}}/jobs/{{job_id}}/proposals
+Authorization: Bearer {{technician_token}}
+Content-Type: application/json
+
+{
+  "price": 50,
+  "message": "Propuesta desde técnico suspendido"
+}
+
+###
+
+### 6.4 Admin unsuspends technician (cleanup)
+### Request: POST unsuspend
+### Expected: 204
+POST {{baseUrl}}/admin/users/{{technician_id}}/unsuspend
+Authorization: Bearer {{admin_token}}
+
+###
+
+###############################################################################
+# Optional: Get job proposals (Admin or Customer owner)
+###############################################################################
+
+### Get proposals for a job
+### Request: GET proposals for job_id
+### Expected: 200
+GET {{baseUrl}}/jobs/{{job_id}}/proposals
+Authorization: Bearer {{admin_token}}
+
+###
+
+### List customer's jobs (mine)
+### Request: GET jobs/mine
+### Expected: 200
+GET {{baseUrl}}/jobs/mine
+Authorization: Bearer {{customer_token}}
+
+###
